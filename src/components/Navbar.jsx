@@ -11,6 +11,7 @@ import {
   LogOut,
   Map,
   Calendar,
+  User,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -96,10 +97,11 @@ export default function Navbar() {
                 </Link>
               </div>
             ) : (
-              <div className="relative">
-                <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 pl-1 pr-3 py-1 rounded-full transition">
+              <div
+                className="relative py-2"
+                onMouseEnter={() => setDropdownOpen(true)}
+                onMouseLeave={() => setDropdownOpen(false)}>
+                <button className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 pl-1 pr-3 py-1 rounded-full transition">
                   <Image
                     src={`https://ui-avatars.com/api/?name=${session.user.name}&background=0d9488&color=fff`}
                     alt="User"
@@ -111,7 +113,12 @@ export default function Navbar() {
                   <span className="text-sm font-medium text-slate-700">
                     {session.user.name.split(" ")[0]}
                   </span>
-                  <ChevronDown size={16} className="text-slate-400" />
+                  <ChevronDown
+                    size={16}
+                    className={`text-slate-400 transition-transform ${
+                      dropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
 
                 {dropdownOpen && (
@@ -146,11 +153,18 @@ export default function Navbar() {
                     )}
 
                     {!isAdmin && (
-                      <Link
-                        href="/dashboard/bookings"
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition">
-                        <Calendar size={16} /> My Bookings
-                      </Link>
+                      <>
+                        <Link
+                          href="/dashboard/profile"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition">
+                          <User size={16} /> My Profile
+                        </Link>
+                        <Link
+                          href="/dashboard/bookings"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition">
+                          <Calendar size={16} /> My Bookings
+                        </Link>
+                      </>
                     )}
 
                     <div className="border-t border-slate-100 mt-2 pt-2">
