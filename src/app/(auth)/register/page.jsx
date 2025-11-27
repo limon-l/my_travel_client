@@ -24,13 +24,14 @@ export default function Register() {
     }
 
     try {
-      // Connect to Express Backend
-      await axios.post("http://localhost:5000/api/register", {
-        name: data.name,
-        email: data.email,
-        dob: data.dob,
-        hometown: data.hometown,
-        password: data.password,
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+      await axios.post(`${apiUrl}/register`, {
+        name: formData.name,
+        email: formData.email,
+        dob: formData.dob,
+        hometown: formData.hometown,
+        password: formData.password,
       });
       toast.success("Registration successful! Please login.");
       router.push("/login");
