@@ -27,16 +27,19 @@ export default function Register() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
       await axios.post(`${apiUrl}/register`, {
-        name: formData.name,
-        email: formData.email,
-        dob: formData.dob,
-        hometown: formData.hometown,
-        password: formData.password,
+        name: data.name,
+        email: data.email,
+        dob: data.dob,
+        hometown: data.hometown,
+        password: data.password,
       });
+
       toast.success("Registration successful! Please login.");
       router.push("/login");
     } catch (err) {
-      toast.error("Registration failed. Email might represent.");
+      const msg =
+        err.response?.data?.error || "Registration failed. Please try again.";
+      toast.error(msg);
     }
   };
 
