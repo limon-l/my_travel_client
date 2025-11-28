@@ -4,9 +4,12 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
+import Image from "next/image";
 
 export default function Register() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [data, setData] = useState({
     name: "",
     email: "",
@@ -23,6 +26,8 @@ export default function Register() {
       return;
     }
 
+    setLoading(true);
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -37,9 +42,12 @@ export default function Register() {
       toast.success("Registration successful! Please login.");
       router.push("/login");
     } catch (err) {
+      console.error("Registration Error:", err);
       const msg =
         err.response?.data?.error || "Registration failed. Please try again.";
       toast.error(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -114,10 +122,36 @@ export default function Register() {
 
           <button
             type="submit"
-            className="w-full bg-teal-600 text-white py-3 rounded-lg font-bold hover:bg-teal-700 transition">
-            Register
+            disabled={loading}
+            className="w-full bg-teal-600 text-white py-3 rounded-lg font-bold hover:bg-teal-700 transition disabled:opacity-70">
+            {loading ? "Creating Account..." : "Register"}
           </button>
         </form>
+        <div className="mt-6">
+          <div className="relative mb-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">
+                Or sign up with
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => signIn("google", { callbackUrl: "/" })}
+            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 p-3 rounded-lg hover:bg-gray-50 transition text-gray-700 font-medium">
+            <Image
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              width={20}
+              height={20}
+              alt="Google"
+              unoptimized
+            />
+            Continue with Google
+          </button>
+        </div>
 
         <div className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{" "}
