@@ -2,6 +2,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,6 +10,7 @@ import { ArrowRight, Lock, Mail } from "lucide-react";
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
 
@@ -16,21 +18,30 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
+    const callbackUrl = searchParams.get("callbackUrl") || "/";
+
     const result = await signIn("credentials", {
       email: form.email,
       password: form.password,
+      callbackUrl,
       redirect: false,
     });
 
     setLoading(false);
 
-    if (result.error) {
+    if (result?.error) {
       toast.error("Invalid email or password");
-    } else {
-      toast.success("Welcome back!");
-      router.push("/");
-      router.refresh();
+      return;
     }
+
+    if (result?.ok) {
+      toast.success("Welcome back!");
+      router.push(callbackUrl);
+      router.refresh();
+      return;
+    }
+
+    toast.error("Login failed. Please try again.");
   };
 
   return (
