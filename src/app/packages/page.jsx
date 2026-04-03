@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -19,41 +19,57 @@ export default function PackagesPage() {
   const [category, setCategory] = useState("All");
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
         const toursRes = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/tours`,
         );
         const toursData = await toursRes.json();
-        setPackages(toursData);
+        if (isMounted) {
+          setPackages(toursData);
+        }
 
-        if (session?.user?.id) {
+        const shouldLoadUserBookings = session?.user?.id && !isAdmin;
+        if (shouldLoadUserBookings) {
           const bookingRes = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/bookings/${session.user.id}`,
           );
           const bookingData = await bookingRes.json();
-          setUserBookings(
-            bookingData
-              .filter((b) => b.status !== "Rejected")
-              .map((b) => b.tour?._id || b.tour),
-          );
+          if (isMounted) {
+            setUserBookings(
+              bookingData
+                .filter((b) => b.status !== "Rejected")
+                .map((b) => b.tour?._id || b.tour),
+            );
+          }
+        } else if (isMounted) {
+          setUserBookings([]);
         }
       } catch (err) {
         console.error("Failed to load data", err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     fetchData();
-  }, [session]);
+    return () => {
+      isMounted = false;
+    };
+  }, [session, isAdmin]);
 
-  const filteredPackages = packages.filter((pkg) => {
-    const matchesSearch = pkg.title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesCategory = category === "All" || pkg.priority === category;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredPackages = useMemo(() => {
+    return packages.filter((pkg) => {
+      const matchesSearch = pkg.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesCategory = category === "All" || pkg.priority === category;
+      return matchesSearch && matchesCategory;
+    });
+  }, [packages, searchTerm, category]);
 
   if (loading)
     return (
