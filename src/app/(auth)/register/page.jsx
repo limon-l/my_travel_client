@@ -55,18 +55,24 @@ export default function Register() {
     setData({ ...data, [e.target.name]: e.target.value });
 
   return (
-    <div className="min-h-screen pt-24 pb-12 flex items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-lg">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
+    <div className="min-h-screen pt-24 pb-12 flex items-center justify-center px-4 relative overflow-hidden">
+      <div className="absolute -top-20 -right-10 w-72 h-72 rounded-full bg-teal-200/40 blur-3xl"></div>
+      <div className="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-cyan-200/40 blur-3xl"></div>
+
+      <div className="glass-panel p-8 rounded-3xl shadow-2xl w-full max-w-lg animate-in fade-in slide-in-from-bottom-5">
+        <h2 className="text-3xl font-bold text-center mb-2 text-slate-900">
           Create Account
         </h2>
+        <p className="text-center text-slate-500 mb-6 text-sm">
+          Start planning your next unforgettable trip.
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             name="name"
             onChange={handleChange}
             placeholder="Full Name"
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+            className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
             required
           />
           <input
@@ -74,7 +80,7 @@ export default function Register() {
             type="email"
             onChange={handleChange}
             placeholder="Email Address"
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+            className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
             required
           />
 
@@ -87,7 +93,7 @@ export default function Register() {
                 name="dob"
                 type="date"
                 onChange={handleChange}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
                 required
               />
             </div>
@@ -97,7 +103,7 @@ export default function Register() {
                 name="hometown"
                 onChange={handleChange}
                 placeholder="City"
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
                 required
               />
             </div>
@@ -108,7 +114,7 @@ export default function Register() {
             type="password"
             onChange={handleChange}
             placeholder="Password"
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+            className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
             required
           />
           <input
@@ -116,14 +122,14 @@ export default function Register() {
             type="password"
             onChange={handleChange}
             placeholder="Confirm Password"
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+            className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
             required
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-teal-600 text-white py-3 rounded-lg font-bold hover:bg-teal-700 transition disabled:opacity-70">
+            className="w-full btn-primary py-3 rounded-xl font-bold disabled:opacity-70">
             {loading ? "Creating Account..." : "Register"}
           </button>
         </form>
@@ -141,7 +147,7 @@ export default function Register() {
 
           <button
             onClick={() => signIn("google", { callbackUrl: "/" })}
-            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 p-3 rounded-lg hover:bg-gray-50 transition text-gray-700 font-medium">
+            className="w-full flex items-center justify-center gap-3 bg-white/80 border border-slate-200 p-3 rounded-xl hover:bg-white transition text-slate-700 font-medium">
             <Image
               src="https://www.svgrepo.com/show/475656/google-color.svg"
               width={20}

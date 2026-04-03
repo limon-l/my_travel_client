@@ -48,13 +48,13 @@ export default function Navbar() {
     <nav
       className={`fixed w-full z-50 transition-all duration-300 ${
         isScrolled
-          ? "bg-white/90 backdrop-blur-md shadow-sm py-2"
+          ? "glass-panel shadow-lg shadow-slate-900/5 py-2"
           : "bg-transparent py-4"
       }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="bg-teal-600 text-white p-1.5 rounded-lg group-hover:bg-teal-700 transition">
+            <div className="bg-linear-to-br from-teal-500 to-cyan-600 text-white p-1.5 rounded-lg group-hover:scale-105 transition duration-300 shadow-lg shadow-teal-700/25">
               <Map size={24} />
             </div>
             <span
@@ -63,7 +63,7 @@ export default function Navbar() {
                   ? "text-slate-800"
                   : "text-slate-800 lg:text-slate-900"
               }`}>
-              Wanderlust<span className="text-teal-600">.</span>
+              Wanderlust<span className="text-shimmer">.</span>
             </span>
           </Link>
 
@@ -72,12 +72,16 @@ export default function Navbar() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`text-sm font-medium transition-colors hover:text-teal-600 ${
+                className={`relative text-sm font-semibold transition-colors hover:text-teal-600 ${
                   isActive(link.href)
                     ? "text-teal-600 font-bold"
                     : "text-slate-600"
                 }`}>
                 {link.name}
+                <span
+                  className={`absolute left-0 -bottom-1 h-0.5 rounded-full bg-teal-500 transition-all duration-300 ${
+                    isActive(link.href) ? "w-full" : "w-0"
+                  }`}></span>
               </Link>
             ))}
           </div>
@@ -101,7 +105,7 @@ export default function Navbar() {
                 className="relative py-2"
                 onMouseEnter={() => setDropdownOpen(true)}
                 onMouseLeave={() => setDropdownOpen(false)}>
-                <button className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 pl-1 pr-3 py-1 rounded-full transition">
+                <button className="flex items-center gap-2 bg-white/70 hover:bg-white border border-slate-200/90 pl-1 pr-3 py-1 rounded-full transition shadow-sm backdrop-blur-md">
                   <Image
                     src={`https://ui-avatars.com/api/?name=${session.user.name}&background=0d9488&color=fff`}
                     alt="User"
@@ -122,7 +126,7 @@ export default function Navbar() {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 animate-in fade-in slide-in-from-top-2">
+                  <div className="absolute right-0 mt-2 w-64 bg-white/95 rounded-xl shadow-2xl border border-slate-100 py-2 animate-in fade-in slide-in-from-top-2 backdrop-blur-md">
                     <div className="px-4 py-3 border-b border-slate-100 mb-2">
                       <p className="text-sm font-bold text-slate-800">
                         {session.user.name}
@@ -183,7 +187,7 @@ export default function Navbar() {
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-slate-800">
+              className="text-slate-800 bg-white/70 border border-slate-200 rounded-xl p-2 shadow-sm backdrop-blur-md">
               {isOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
           </div>
@@ -191,12 +195,12 @@ export default function Navbar() {
       </div>
 
       {isOpen && (
-        <div className="md:hidden bg-white border-t p-4 space-y-4 shadow-lg absolute w-full">
+        <div className="md:hidden bg-white/95 backdrop-blur-xl border-t p-4 space-y-4 shadow-lg absolute w-full animate-in fade-in slide-in-from-top-2">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
-              className="block text-slate-600 font-medium">
+              className="block text-slate-600 font-medium py-1.5 hover:text-teal-700 transition">
               {link.name}
             </Link>
           ))}
