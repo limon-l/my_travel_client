@@ -4,7 +4,7 @@ A full-stack, realistic travel agency application built with Next.js (App Router
 
 🚀 Live Demo
 
-Frontend (Vercel): [https://my-travel-client-c663.vercel.app/](https://github.com/limon-l/my_travel_client)
+Frontend (Vercel): [[https://my-travel-client-c663.vercel.app](https://my-travel-client.vercel.app/)]
 
 Backend (Render): [https://my-travel-server1.onrender.com](https://my-travel-server1.onrender.com)
 
