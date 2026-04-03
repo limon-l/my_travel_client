@@ -24,11 +24,15 @@ async function checkIsBooked(userId, tourId) {
       `${process.env.NEXT_PUBLIC_API_URL}/bookings/${userId}`,
       {
         cache: "no-store",
-      }
+      },
     );
     if (!res.ok) return false;
     const bookings = await res.json();
-    return bookings.some((b) => b.tour?._id === tourId || b.tour === tourId);
+    return bookings.some(
+      (b) =>
+        (b.status === "Pending" || b.status === "Confirmed") &&
+        (b.tour?._id === tourId || b.tour === tourId),
+    );
   } catch (error) {
     return false;
   }
@@ -140,6 +144,7 @@ export default async function TourDetails({ params }) {
             image={tour.image}
             price={tour.price}
             duration={tour.duration}
+            availableDates={tour.availableDates || []}
             isBooked={isBooked}
           />
         </div>

@@ -3,22 +3,46 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 
 export default function LoginForm() {
+  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
 
+  useEffect(() => {
+    if (status === "authenticated") {
+      const requestedCallback = searchParams.get("callbackUrl");
+      const fallbackPath =
+        session?.user?.role === "admin" ? "/dashboard/requests" : "/packages";
+      const safePath =
+        requestedCallback && !requestedCallback.includes("/login")
+          ? requestedCallback
+          : fallbackPath;
+      router.replace(safePath);
+    }
+  }, [status, session, router, searchParams]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const callbackUrl = searchParams.get("callbackUrl") || "/";
+    const fallbackPath =
+      form.email === "admin@wanderlust.com"
+        ? "/dashboard/requests"
+        : "/packages";
+    const requestedCallback = searchParams.get("callbackUrl");
+    const callbackUrl =
+      requestedCallback && !requestedCallback.includes("/login")
+        ? requestedCallback
+        : fallbackPath;
 
     const result = await signIn("credentials", {
       email: form.email,

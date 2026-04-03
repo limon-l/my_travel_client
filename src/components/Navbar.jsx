@@ -12,6 +12,7 @@ import {
   Map,
   Calendar,
   User,
+  ClipboardCheck,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -143,6 +144,11 @@ export default function Navbar() {
 
                     {isAdmin && (
                       <>
+                        <Link
+                          href="/dashboard/requests"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition">
+                          <ClipboardCheck size={16} /> Booking Requests
+                        </Link>
                         <Link
                           href="/dashboard/add"
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-teal-50 hover:text-teal-700 transition">

@@ -5,6 +5,7 @@ import { Check, X, Calendar, CheckCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function BookButton({
   tourId,
@@ -12,18 +13,43 @@ export default function BookButton({
   image,
   price,
   duration,
+  availableDates = [],
   isBooked: initialBookedStatus,
 }) {
   const { data: session } = useSession();
   const router = useRouter();
+  const isAdmin =
+    session?.user?.role === "admin" ||
+    session?.user?.email === "admin@wanderlust.com";
   const [loading, setLoading] = useState(false);
   const [showDateInput, setShowDateInput] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [isBooked, setIsBooked] = useState(initialBookedStatus);
+  const [liveAvailableDates, setLiveAvailableDates] = useState(availableDates);
 
   useEffect(() => {
     setIsBooked(initialBookedStatus);
   }, [initialBookedStatus]);
+
+  useEffect(() => {
+    setLiveAvailableDates(availableDates || []);
+  }, [availableDates]);
+
+  useEffect(() => {
+    const fetchLiveAvailableDates = async () => {
+      if (!showDateInput) return;
+      try {
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/tours/${tourId}/available-dates`,
+        );
+        setLiveAvailableDates(res.data?.availableDates || []);
+      } catch (error) {
+        setLiveAvailableDates([]);
+      }
+    };
+
+    fetchLiveAvailableDates();
+  }, [showDateInput, tourId]);
 
   const getEndDate = (start, days) => {
     if (!start) return "";
@@ -57,7 +83,7 @@ export default function BookButton({
         duration: duration || 5,
       });
 
-      toast.success("Trip Booked Successfully! ✈️");
+      toast.success("Request sent. Waiting for admin approval.");
       setShowDateInput(false);
       setSelectedDate("");
       setIsBooked(true);
@@ -77,6 +103,16 @@ export default function BookButton({
         className="w-full bg-slate-100 text-slate-400 py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-not-allowed border border-slate-200">
         Already Booked <CheckCircle size={18} className="text-green-500" />
       </button>
+    );
+  }
+
+  if (isAdmin) {
+    return (
+      <Link
+        href={`/dashboard/requests?tourId=${tourId}`}
+        className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition shadow-lg shadow-indigo-900/10">
+        Add Travel Date
+      </Link>
     );
   }
 
@@ -105,13 +141,28 @@ export default function BookButton({
               </button>
             </div>
 
-            <input
-              type="date"
+            <select
               className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm mb-3 focus:outline-none focus:border-teal-500 text-slate-600"
-              min={new Date().toISOString().split("T")[0]}
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-            />
+              onChange={(e) => setSelectedDate(e.target.value)}>
+              <option value="">Select an available date</option>
+              {liveAvailableDates.map((date) => (
+                <option key={date} value={date}>
+                  {new Date(date).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </option>
+              ))}
+            </select>
+
+            {liveAvailableDates.length === 0 && (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-md px-2 py-1 mb-3">
+                Admin has not published available dates for this tour yet.
+              </p>
+            )}
 
             {selectedDate && (
               <div className="bg-teal-50 p-2 rounded-lg mb-3 text-center border border-teal-100">
@@ -126,9 +177,11 @@ export default function BookButton({
 
             <button
               onClick={handleBooking}
-              disabled={loading}
+              disabled={
+                loading || !selectedDate || liveAvailableDates.length === 0
+              }
               className="w-full bg-teal-600 text-white py-2.5 rounded-lg text-sm font-bold hover:bg-teal-700 transition disabled:opacity-70">
-              {loading ? "Processing..." : "Confirm Booking"}
+              {loading ? "Processing..." : "Send Booking Request"}
             </button>
           </div>
         </>

@@ -18,7 +18,7 @@ export default function MyBookings() {
         try {
           // Backend now returns full booking objects with dates
           const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/bookings/${session.user.id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/bookings/${session.user.id}`,
           );
           setBookings(res.data);
         } catch (err) {
@@ -101,7 +101,20 @@ export default function MyBookings() {
                         Booked on {formatDate(booking.createdAt)}
                       </span>
                     </div>
+                    <div
+                      className={`text-xs font-bold px-2 py-1 rounded-md border ${
+                        booking.status === "Confirmed"
+                          ? "bg-green-50 text-green-700 border-green-100"
+                          : booking.status === "Rejected"
+                            ? "bg-red-50 text-red-700 border-red-100"
+                            : "bg-amber-50 text-amber-700 border-amber-100"
+                      }`}>
+                      {booking.status || "Pending"}
+                    </div>
                   </div>
+                  <p className="text-xs mt-2 text-slate-500">
+                    {booking.statusNote || "Awaiting admin approval"}
+                  </p>
                 </div>
 
                 <div className="flex flex-col items-end gap-2 w-full sm:w-auto mt-4 sm:mt-0">

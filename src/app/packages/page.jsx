@@ -8,6 +8,9 @@ import BookButton from "@/components/BookButton";
 
 export default function PackagesPage() {
   const { data: session } = useSession();
+  const isAdmin =
+    session?.user?.role === "admin" ||
+    session?.user?.email === "admin@wanderlust.com";
   const [packages, setPackages] = useState([]);
   const [userBookings, setUserBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,17 +22,21 @@ export default function PackagesPage() {
     const fetchData = async () => {
       try {
         const toursRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/tours`
+          `${process.env.NEXT_PUBLIC_API_URL}/tours`,
         );
         const toursData = await toursRes.json();
         setPackages(toursData);
 
         if (session?.user?.id) {
           const bookingRes = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/bookings/${session.user.id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/bookings/${session.user.id}`,
           );
           const bookingData = await bookingRes.json();
-          setUserBookings(bookingData.map((b) => b.tour?._id || b.tour));
+          setUserBookings(
+            bookingData
+              .filter((b) => b.status !== "Rejected")
+              .map((b) => b.tour?._id || b.tour),
+          );
         }
       } catch (err) {
         console.error("Failed to load data", err);
@@ -104,18 +111,24 @@ export default function PackagesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredPackages.map((pkg) => {
               const isBooked = userBookings.includes(pkg._id);
+              const hasAvailableDates = (pkg.availableDates || []).length > 0;
+              const blurForClient = !isAdmin && !hasAvailableDates;
 
               return (
                 <div
                   key={pkg._id}
-                  className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full group">
+                  className={`bg-white rounded-2xl border border-slate-100 shadow-sm transition-all duration-300 overflow-hidden flex flex-col h-full group ${
+                    blurForClient ? "opacity-60 saturate-50" : "hover:shadow-xl"
+                  }`}>
                   <div className="relative h-64 bg-gray-200 overflow-hidden">
                     <Image
                       src={pkg.image}
                       alt={pkg.title}
                       fill
                       sizes="(max-width: 768px) 100vw, 33vw"
-                      className="object-cover group-hover:scale-110 transition duration-700"
+                      className={`object-cover transition duration-700 ${
+                        blurForClient ? "blur-[1.5px]" : "group-hover:scale-110"
+                      }`}
                     />
                     {isBooked && (
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-10">
@@ -150,12 +163,19 @@ export default function PackagesPage() {
                     </p>
 
                     <div className="space-y-3 mt-auto">
+                      {blurForClient && (
+                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                          Date not available yet. Admin will publish upcoming
+                          dates.
+                        </p>
+                      )}
                       <BookButton
                         tourId={pkg._id}
                         title={pkg.title}
                         image={pkg.image}
                         price={pkg.price}
                         duration={pkg.duration}
+                        availableDates={pkg.availableDates || []}
                         isBooked={isBooked}
                       />
                       <Link
