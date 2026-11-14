@@ -1,170 +1,244 @@
 "use client";
+
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
-import toast from "react-hot-toast";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import Image from "next/image";
+import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 
-export default function Register() {
+import { Alert, Field, inputClasses } from "@/components/ui";
+import { ApiError, api } from "@/lib/api-client";
+
+const INITIAL = {
+  name: "",
+  email: "",
+  dob: "",
+  hometown: "",
+  password: "",
+  confirmPass: "",
+};
+
+export default function RegisterPage() {
   const router = useRouter();
+  const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState({
-    name: "",
-    email: "",
-    dob: "",
-    hometown: "",
-    password: "",
-    confirmPass: "",
-  });
+  const [error, setError] = useState(null);
+  const [details, setDetails] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (data.password !== data.confirmPass) {
-      toast.error("Passwords do not match!");
+  function update(field) {
+    return (event) => setForm((current) => ({ ...current, [field]: event.target.value }));
+  }
+
+  async function onSubmit(event) {
+    event.preventDefault();
+    setError(null);
+    setDetails(null);
+
+    if (!form.name.trim()) {
+      setError("Your full name is required.");
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("Use at least 8 characters for your password.");
+      return;
+    }
+    if (form.password !== form.confirmPass) {
+      setError("The two passwords do not match.");
       return;
     }
 
     setLoading(true);
-
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-
-      await axios.post(`${apiUrl}/register`, {
-        name: data.name,
-        email: data.email,
-        dob: data.dob,
-        hometown: data.hometown,
-        password: data.password,
+      await api.register({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        dob: form.dob,
+        hometown: form.hometown.trim(),
+        password: form.password,
       });
-
-      toast.success("Registration successful! Please login.");
-      router.push("/login");
-    } catch (err) {
-      console.error("Registration Error:", err);
-      const msg =
-        err.response?.data?.error || "Registration failed. Please try again.";
-      toast.error(msg);
-    } finally {
+    } catch (cause) {
+      if (cause instanceof ApiError) {
+        setError(cause.message);
+        setDetails(Array.isArray(cause.details) ? cause.details : null);
+      } else {
+        setError("Registration could not be completed. Please retry.");
+      }
       setLoading(false);
+      return;
     }
-  };
 
-  const handleChange = (e) =>
-    setData({ ...data, [e.target.name]: e.target.value });
+    // Sign in with the credentials that were just accepted. If that extra step
+    // fails, the account still exists and the traveller can sign in manually.
+    try {
+      const result = await signIn("credentials", {
+        email: form.email.trim(),
+        password: form.password,
+        redirect: false,
+      });
+      if (result?.ok) {
+        router.replace("/dashboard");
+        router.refresh();
+        return;
+      }
+    } catch {
+      // Fall through to the sign-in page.
+    }
+
+    router.push("/login?registered=1");
+    setLoading(false);
+  }
 
   return (
-    <div className="min-h-screen pt-24 pb-12 flex items-center justify-center px-4 relative overflow-hidden">
-      <div className="absolute -top-20 -right-10 w-72 h-72 rounded-full bg-teal-200/40 blur-3xl"></div>
-      <div className="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-cyan-200/40 blur-3xl"></div>
+    <div className="px-4 py-12 sm:px-8">
+      <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1fr_0.8fr] lg:items-start">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lagoon-700">
+            Create an account
+          </p>
+          <h1 className="mt-3 text-4xl leading-tight text-ink">Start requesting</h1>
+          <p className="mt-3 max-w-lg text-base leading-relaxed text-ink-muted">
+            An account ties every request to you so operations can review it and you can
+            see the decision. Browsing the atlas never requires an account.
+          </p>
 
-      <div className="glass-panel p-8 rounded-3xl shadow-2xl w-full max-w-lg animate-in fade-in slide-in-from-bottom-5">
-        <h2 className="text-3xl font-bold text-center mb-2 text-slate-900">
-          Create Account
-        </h2>
-        <p className="text-center text-slate-500 mb-6 text-sm">
-          Start planning your next unforgettable trip.
-        </p>
+          {error ? (
+            <Alert tone="danger" role="alert" title="Account not created" className="mt-6">
+              <p>{error}</p>
+              {details ? (
+                <ul className="mt-2 list-inside list-disc text-xs">
+                  {details.map((item) => (
+                    <li key={String(item)}>{String(item)}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </Alert>
+          ) : null}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            name="name"
-            onChange={handleChange}
-            placeholder="Full Name"
-            className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
-            required
-          />
-          <input
-            name="email"
-            type="email"
-            onChange={handleChange}
-            placeholder="Email Address"
-            className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
-            required
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-gray-500 ml-1">
-                Date of Birth
-              </label>
+          <form onSubmit={onSubmit} className="mt-8 space-y-5">
+            <Field label="Full name" htmlFor="register-name" required>
               <input
-                name="dob"
-                type="date"
-                onChange={handleChange}
-                className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
+                id="register-name"
                 required
+                autoComplete="name"
+                maxLength={120}
+                value={form.name}
+                onChange={update("name")}
+                className={inputClasses()}
               />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 ml-1">Hometown</label>
+            </Field>
+
+            <Field label="Email" htmlFor="register-email" required>
               <input
-                name="hometown"
-                onChange={handleChange}
-                placeholder="City"
-                className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
+                id="register-email"
+                type="email"
                 required
+                autoComplete="email"
+                value={form.email}
+                onChange={update("email")}
+                className={inputClasses()}
+                placeholder="you@example.com"
               />
-            </div>
-          </div>
+            </Field>
 
-          <input
-            name="password"
-            type="password"
-            onChange={handleChange}
-            placeholder="Password"
-            className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
-            required
-          />
-          <input
-            name="confirmPass"
-            type="password"
-            onChange={handleChange}
-            placeholder="Confirm Password"
-            className="w-full p-3 border border-slate-200 bg-white/80 rounded-xl focus:ring-4 focus:ring-teal-500/15 focus:border-teal-500 outline-none transition"
-            required
-          />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-3 rounded-xl font-bold disabled:opacity-70">
-            {loading ? "Creating Account..." : "Register"}
-          </button>
-        </form>
-        <div className="mt-6">
-          <div className="relative mb-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Date of birth" htmlFor="register-dob">
+                <input
+                  id="register-dob"
+                  type="date"
+                  value={form.dob}
+                  onChange={update("dob")}
+                  className={inputClasses()}
+                />
+              </Field>
+              <Field label="Hometown" htmlFor="register-hometown">
+                <input
+                  id="register-hometown"
+                  maxLength={120}
+                  value={form.hometown}
+                  onChange={update("hometown")}
+                  className={inputClasses()}
+                  placeholder="City"
+                />
+              </Field>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
-                Or sign up with
-              </span>
-            </div>
-          </div>
 
-          <button
-            onClick={() => signIn("google", { callbackUrl: "/" })}
-            className="w-full flex items-center justify-center gap-3 bg-white/80 border border-slate-200 p-3 rounded-xl hover:bg-white transition text-slate-700 font-medium">
-            <Image
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              width={20}
-              height={20}
-              alt="Google"
-              unoptimized
-            />
-            Continue with Google
-          </button>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field
+                label="Password"
+                htmlFor="register-password"
+                hint="At least 8 characters."
+                required
+              >
+                <input
+                  id="register-password"
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={form.password}
+                  onChange={update("password")}
+                  className={inputClasses()}
+                />
+              </Field>
+              <Field label="Confirm password" htmlFor="register-confirm" required>
+                <input
+                  id="register-confirm"
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={form.confirmPass}
+                  onChange={update("confirmPass")}
+                  className={inputClasses()}
+                />
+              </Field>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ocean-900 px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-ocean-800 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+                  Creating account…
+                </>
+              ) : (
+                <>
+                  Create account
+                  <ArrowRight size={18} aria-hidden="true" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="mt-6 text-sm text-ink-muted">
+            Already registered?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-lagoon-700 underline-offset-4 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
         </div>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link href="/login" className="text-teal-600 font-bold">
-            Login here
-          </Link>
-        </div>
+        <aside className="rounded-2xl border border-line bg-surface p-6">
+          <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <ShieldCheck size={16} aria-hidden="true" className="text-lagoon-700" />
+            What happens with your account
+          </p>
+          <ul className="mt-4 space-y-3 text-sm leading-relaxed text-ink-muted">
+            <li>The API hashes your password; this browser never stores it.</li>
+            <li>Your role is assigned by the server. It cannot be chosen here.</li>
+            <li>Requests are attributed to your account by a signed server token.</li>
+            <li>No payment details are requested at any point.</li>
+          </ul>
+          <p className="mt-5 border-t border-line pt-4 text-xs leading-relaxed text-ink-subtle">
+            This is a portfolio product. Use a password you do not reuse elsewhere.
+          </p>
+        </aside>
       </div>
     </div>
   );

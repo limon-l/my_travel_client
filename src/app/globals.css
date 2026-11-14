@@ -1,213 +1,194 @@
 @import "tailwindcss";
 
-:root {
-  --bg: #f6f9fc;
-  --bg-soft: #eaf6f7;
-  --text-main: #0f172a;
-  --text-muted: #475569;
-  --teal-1: #0d9488;
-  --teal-2: #0f766e;
-  --ink: #101828;
+/* ==========================================================================
+   Wanderlust Atlas — semantic design tokens
+   Palette: Deep Ocean, Lagoon, Sand, Sunset.
+   Every colour below is referenced through a role name, never a raw hex, so a
+   theme change is a single edit.
+   ========================================================================== */
+
+@theme inline {
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), Georgia, "Times New Roman", serif;
+
+  /* Brand scale */
+  --color-ocean-950: #06171d;
+  --color-ocean-900: #0d2933;
+  --color-ocean-800: #143744;
+  --color-ocean-700: #1d4b59;
+  --color-ocean-600: #2a6373;
+
+  --color-lagoon-700: #0f5f5e;
+  --color-lagoon-600: #1a7776;
+  --color-lagoon-500: #2a9492;
+  --color-lagoon-200: #b8ddda;
+  --color-lagoon-100: #d9ecea;
+  --color-lagoon-50: #eef7f6;
+
+  --color-sand-50: #fbf9f5;
+  --color-sand-100: #f4f0e8;
+  --color-sand-200: #ebe4d8;
+  --color-sand-300: #dcd1bf;
+  --color-sand-400: #c9b99f;
+
+  --color-sunset-700: #9a5f2c;
+  --color-sunset-600: #c07f45;
+  --color-sunset-500: #d99b64;
+  --color-sunset-100: #f7e8d8;
+
+  /* Semantic roles */
+  --color-canvas: #f7f4ee;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f2ede4;
+  --color-ink: #10262d;
+  --color-ink-muted: #566a70;
+  --color-ink-subtle: #7d8f94;
+  --color-line: #e2dbcf;
+  --color-line-strong: #cfc5b5;
+  --color-focus: #1a7776;
+
+  --color-success: #1d6f47;
+  --color-success-soft: #e6f3ec;
+  --color-success-line: #bfe0cd;
+  --color-warning: #8f5b16;
+  --color-warning-soft: #fbf1e1;
+  --color-warning-line: #efd9b4;
+  --color-danger: #9c332e;
+  --color-danger-soft: #fbecea;
+  --color-danger-line: #f0c8c4;
+  --color-info: #1e5c86;
+  --color-info-soft: #e9f2f8;
+  --color-info-line: #c6ddec;
 }
 
-body {
-  background:
-    radial-gradient(circle at 8% 10%, rgba(45, 212, 191, 0.18), transparent 34%),
-    radial-gradient(circle at 90% 20%, rgba(59, 130, 246, 0.16), transparent 36%),
-    radial-gradient(circle at 16% 88%, rgba(20, 184, 166, 0.1), transparent 28%),
-    linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 35%, #ffffff 100%);
-  color: var(--text-main);
-  font-family: var(--font-manrope), "Segoe UI", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-}
-
-h1,
-h2,
-h3,
-.display-heading {
-  font-family: var(--font-playfair), Georgia, serif;
-  letter-spacing: -0.02em;
-}
-
-.site-chrome {
-  position: relative;
-  isolation: isolate;
-}
-
-.site-chrome::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 90% 85%, rgba(20, 184, 166, 0.08), transparent 25%),
-    radial-gradient(circle at 8% 78%, rgba(2, 132, 199, 0.06), transparent 24%);
-}
-
-.site-chrome::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image: linear-gradient(rgba(15, 23, 42, 0.018) 1px,
-      transparent 1px),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.018) 1px, transparent 1px);
-  background-size: 26px 26px;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--teal-1) 0%, var(--teal-2) 100%);
-  color: white;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
-  box-shadow: 0 12px 30px -14px rgba(13, 148, 136, 0.7);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 34px -16px rgba(13, 148, 136, 0.8);
-  filter: saturate(1.1);
-}
-
-.pro-card {
-  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
-  border: 1px solid #f1f5f9;
-}
-
-.pro-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 22px 45px -20px rgba(15, 23, 42, 0.28);
-  border-color: #ccfbf1;
-}
-
-main section {
-  animation: sectionIn 0.9s ease both;
-}
-
-.glass-panel {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-}
-
-.lift-hover {
-  transition: transform 0.28s ease, box-shadow 0.28s ease;
-}
-
-.lift-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 32px -20px rgba(15, 23, 42, 0.45);
-}
-
-.text-shimmer {
-  background-image: linear-gradient(110deg, #0f766e 25%, #155e75 40%, #0d9488 58%);
-  background-size: 200% auto;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  animation: shimmer 6s linear infinite;
-}
-
-.animate-in {
-  animation-duration: 500ms;
-  animation-fill-mode: both;
-}
-
-.fade-in {
-  animation-name: fadeIn;
-}
-
-.slide-in-from-top-2 {
-  animation-name: slideInFromTop;
-}
-
-.slide-in-from-bottom-5,
-.slide-in-from-bottom-6,
-.slide-in-from-bottom-7 {
-  animation-name: slideInFromBottom;
-}
-
-.zoom-in-95,
-.zoom-in-110 {
-  animation-name: zoomIn;
-}
-
-.duration-700 {
-  animation-duration: 700ms;
-}
-
-.duration-1000 {
-  animation-duration: 1000ms;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
-  to {
-    opacity: 1;
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-lagoon-200);
+    color: var(--color-ocean-900);
+  }
+
+  [hidden] {
+    display: none !important;
   }
 }
 
-@keyframes slideInFromTop {
-  from {
-    transform: translateY(-8px);
-    opacity: 0;
+@layer components {
+  .container-page {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
   }
 
-  to {
-    transform: translateY(0);
-    opacity: 1;
+  @media (min-width: 640px) {
+    .container-page {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-page {
+      padding-inline: 2rem;
+    }
+  }
+
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--color-ocean-900);
+    color: #fff;
+    font-weight: 600;
+    transition: top 150ms ease;
+  }
+
+  .skip-link:focus {
+    top: 1rem;
+  }
+
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 1rem;
+  }
+
+  .rich-text {
+    color: var(--color-ink-muted);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  .rich-text p + p {
+    margin-top: 1rem;
+  }
+
+  .hero-grain {
+    background-image:
+      radial-gradient(circle at 18% 22%, rgba(26, 119, 118, 0.35), transparent 42%),
+      radial-gradient(circle at 82% 12%, rgba(217, 155, 100, 0.28), transparent 38%),
+      radial-gradient(circle at 55% 88%, rgba(6, 23, 29, 0.55), transparent 52%);
   }
 }
 
-@keyframes slideInFromBottom {
-  from {
-    transform: translateY(14px);
-    opacity: 0;
+@layer utilities {
+  .reveal {
+    animation: welcome-in 600ms ease-out both;
   }
 
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes zoomIn {
-  from {
-    transform: scale(0.96);
-    opacity: 0;
-  }
-
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes shimmer {
-  to {
-    background-position: 200% center;
-  }
-}
-
-@keyframes sectionIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+  @keyframes welcome-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {

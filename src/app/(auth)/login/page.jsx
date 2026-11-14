@@ -1,14 +1,15 @@
 import { Suspense } from "react";
 import LoginForm from "./LoginForm";
+import { LoadingState } from "@/components/ui";
 
-export default function Login() {
+export const metadata = {
+  title: "Sign in",
+  description: "Sign in to request published departures and track operations decisions.",
+};
+
+export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-white">
-          <p>Loading...</p>
-        </div>
-      }>
+    <Suspense fallback={<LoadingState label="Loading sign-in…" />}>
       <LoginForm />
     </Suspense>
   );
