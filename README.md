@@ -67,15 +67,15 @@ linking design.
 | Route                     | Purpose                                                        |
 | ------------------------- | -------------------------------------------------------------- |
 | `/`                       | Landing page and featured catalogue                            |
-| `/tours`                  | Public catalogue with availability-aware cards                 |
-| `/tours/[id]`             | Tour detail, departure picker, request panel                   |
+| `/tours`                  | Public catalogue with URL-synced search, filters and sorting   |
+| `/tours/[id]`             | Tour detail, month calendar, request panel, related journeys   |
 | `/packages`               | Permanent redirect to `/tours` (legacy URL)                    |
 | `/about`, `/contact`      | Static product pages                                           |
 | `/login`, `/register`     | Credentials auth                                               |
-| `/dashboard`              | Role-aware overview                                            |
+| `/dashboard`              | Operations overview with request analytics                     |
 | `/dashboard/bookings`     | Customer requests, timeline, withdrawal                        |
-| `/dashboard/requests`     | Operations queue and per-tour departure management             |
-| `/dashboard/manage`       | Tour inventory                                                 |
+| `/dashboard/requests`     | Operations queue (search, sort, detail) and departure calendar  |
+| `/dashboard/manage`       | Tour inventory with create, edit and delete                    |
 | `/dashboard/add`          | Create a tour                                                  |
 | `/dashboard/profile`      | Profile details                                                |
 | `/api/auth/[...nextauth]` | NextAuth handlers                                              |
@@ -84,6 +84,22 @@ linking design.
 
 `/dashboard/*` is protected by `src/proxy.js`; the API bridge repeats the check on
 the server rather than relying on the proxy alone.
+
+## Feature highlights
+
+- **Availability-first booking.** A month calendar renders only the departures
+  operations published, with keyboard navigation (arrows, Home/End, PageUp/PageDown),
+  a list fallback, and server-derived duration and total.
+- **Honest request flow.** Review → submit → `Pending`. Idempotency keys are stable
+  per logical attempt; a replay shows the original booking; a conflict refreshes
+  availability instead of faking success.
+- **Operations command centre.** Pending/Confirmed/Rejected queue with search, sort,
+  a detail drawer, atomic confirm/reject, and a departure calendar that warns about
+  affected bookings before disabling a date.
+- **Tour editing.** `PATCH /api/tours/:id` with an editable allowlist. Booking
+  snapshots (title, image, price, dates) are never rewritten by a catalogue edit.
+- **Theme engine.** Light / Dark / System with persistence, no pre-paint flash, and
+  paired semantic tokens across public, customer and admin surfaces.
 
 ## Security model
 
@@ -181,29 +197,48 @@ Windows note: if `npm` is blocked by PowerShell execution policy, use `npm.cmd`.
 Vitest + jsdom + Testing Library cover the logic that protects money, dates, and
 identity:
 
-- `test/dates.test.js` — UTC calendar-date parsing/formatting, past-date guards.
+- `test/dates.test.js` — UTC calendar-date parsing/formatting, past-date guards, and
+  the 42-cell month grid used by the departure calendar.
 - `test/booking-status.test.js` — status labels and transition rules.
 - `test/session-token.test.js` — HMAC signing, tampering, expiry, weak secrets.
 - `test/api-client.test.js` — API client error mapping and upstream failures.
 - `test/components.test.jsx` — availability, status badge, and request-panel states.
+- `test/catalogue-filter.test.js` — search, category, price and duration filters,
+  sorting, and URL state round-tripping.
+
+Current verified totals: **44 tests across 6 files**. Lint and production build are
+run separately (`npx eslint`, `npm run build`).
 
 Real database integration and concurrency tests live in the API repository and are
 skipped unless `TEST_MONGO_URI` points at a disposable database.
 
 ## Design system
 
-Tokens live in `src/app/globals.css`:
+Semantic tokens live in `src/app/globals.css` and switch inside `.dark`:
 
-| Token          | Value     | Use                                    |
-| -------------- | --------- | -------------------------------------- |
-| Deep Ocean     | `#0D2933` | Primary text, dark surfaces             |
-| Lagoon         | `#1A7776` | Primary action, focus, links           |
-| Sand           | `#F4F0E8` | Page background                        |
-| Sunset         | `#D99B64` | Accent, highlights                     |
+| Role              | Light     | Dark      | Use                                  |
+| ----------------- | --------- | --------- | ------------------------------------ |
+| `--canvas`        | `#F7F9F8` | `#0C151B` | Page background                      |
+| `--surface`       | `#FFFFFF` | `#15232B` | Cards, panels, dialogs               |
+| `--surface-muted` | `#EDF3F1` | `#1B2C34` | Secondary blocks, table headers      |
+| `--ink`           | `#172B32` | `#F2F8FA` | Primary text                         |
+| `--ink-muted`     | `#566D75` | `#B2C2C9` | Supporting text                      |
+| `--brand`         | `#0B6B70` | `#65D9D4` | Primary action, chart bars           |
+| `--on-brand`      | `#FFFFFF` | `#062125` | Text on brand fills                  |
+| `--brand-soft`    | `#E8F4F3` | teal 12%  | Quiet action and selected states     |
+| `--line`          | `#DCE6E4` | `#2A3F48` | Borders and dividers                 |
+| `--danger`        | `#9C332E` | `#F1A29C` | Destructive actions and errors       |
+| `--warning`       | `#8F5B16` | `#F0C184` | Pending state                        |
+| `--success`       | `#1D6F47` | `#7FDCA6` | Confirmed state                      |
 
-Typography: **Manrope** for UI, **Playfair Display** for display headings. Spacing,
-radii, shadows, and control heights are tokenised; UI primitives live in
-`src/components/ui/`.
+The fixed `ocean`/`lagoon`/`sand`/`sunset` scale is kept only for the always-dark
+hero and image overlays. Typography is **Manrope** for UI and **Playfair Display**
+for display headings. UI primitives live in `src/components/ui/`.
+
+The theme engine (`ThemeProvider` + `ThemeToggle`) stores the choice in
+`localStorage` under `wa-theme`, follows `prefers-color-scheme` in System mode, and is
+pre-applied by a tiny inline script in `layout.js` so there is no incorrect-theme
+flash or hydration mismatch.
 
 ## Accessibility notes
 
@@ -211,6 +246,12 @@ radii, shadows, and control heights are tokenised; UI primitives live in
   semantic landmarks.
 - A skip link and a single `<main>` landmark are present in the root layout.
 - Status is conveyed by text as well as colour.
+- The departure calendar is a grid of real buttons with a roving tabindex, arrow /
+  Home / End / PageUp / PageDown support, `aria-pressed` / `aria-current`, and an
+  accessible name that includes weekday, availability and past state.
+- Dialogs are labelled, trap focus, close on Escape, and restore focus to the
+  trigger.
+- Every chart has a text description and a real data-table fallback.
 - `prefers-reduced-motion` disables non-essential transitions and animations.
 - Forms use labelled controls and inline error text.
 
@@ -235,10 +276,11 @@ operations; this repository does not perform them automatically.
 
 ## Known limitations
 
-- The deployed API has been observed returning `500` for `GET /api/tours` while `/`
-  returns `200`. Root-cause evidence (Render logs/revision) is not available in this
-  workspace, so production readiness is **BLOCKED** until the API is redeployed and
-  `/api/health` reports `ok`.
+- The deployed API is outside this workspace. The API now answers `503
+  SERVICE_UNAVAILABLE` with a `/api/health` readiness body instead of buffering into
+  a `500`, but the live Render instance cannot be re-verified from here, so
+  production readiness remains **BLOCKED** until `/api/health` reports
+  `bookingIndexes: "verified"`.
 - Local end-to-end tests cannot reach MongoDB from this environment
   (`querySrv ECONNREFUSED`); real-DB booking/concurrency coverage is therefore
   **BLOCKED** locally.

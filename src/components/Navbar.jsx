@@ -17,6 +17,7 @@ import {
 
 import { cn } from "@/lib/cn";
 import { displayName, isAdminSession } from "@/lib/roles";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV_LINKS = [
   { name: "Home", href: "/" },
@@ -80,6 +81,15 @@ export default function Navbar() {
     };
   }, [menuOpen, closeMenu]);
 
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen]);
+
   const isActive = (href) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
@@ -94,12 +104,12 @@ export default function Navbar() {
       >
         <nav className="container-page flex h-16 items-center justify-between gap-4" aria-label="Primary">
           <Link href="/" className="flex items-center gap-2 rounded-md py-1">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-ocean-900 text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-on-brand">
               <Compass size={18} aria-hidden="true" />
             </span>
             <span className="flex flex-col leading-none">
               <span className="font-display text-xl text-ink">Wanderlust</span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-lagoon-700">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.3em] text-brand-ink">
                 Atlas
               </span>
             </span>
@@ -114,7 +124,7 @@ export default function Navbar() {
                   className={cn(
                     "rounded-full px-3 py-2 text-sm font-medium transition-colors",
                     isActive(link.href)
-                      ? "bg-surface-muted text-ocean-900"
+                      ? "bg-surface-muted text-brand-ink"
                       : "text-ink-muted hover:bg-surface-muted hover:text-ink",
                   )}
                 >
@@ -125,8 +135,9 @@ export default function Navbar() {
           </ul>
 
           <div className="hidden items-center gap-2 md:flex">
+            <ThemeToggle />
             {status === "loading" ? (
-              <span className="h-9 w-24 animate-pulse rounded-full bg-sand-200" aria-hidden="true" />
+              <span className="h-9 w-24 animate-pulse rounded-full bg-surface-muted" aria-hidden="true" />
             ) : session ? (
               <div className="relative">
                 <button
@@ -139,7 +150,7 @@ export default function Navbar() {
                 >
                   <span
                     aria-hidden="true"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-lagoon-600 text-[11px] font-bold text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-on-brand"
                   >
                     {initials(displayName(session))}
                   </span>
@@ -163,7 +174,7 @@ export default function Navbar() {
                       <p className="truncate text-sm font-semibold text-ink">{displayName(session)}</p>
                       <p className="truncate text-xs text-ink-muted">{session.user.email}</p>
                       {isAdmin ? (
-                        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-lagoon-700">
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-ink">
                           Operations
                         </p>
                       ) : null}
@@ -231,7 +242,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/register"
-                  className="rounded-full bg-ocean-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-ocean-800"
+                  className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-on-brand transition-colors hover:bg-brand-hover"
                 >
                   Create account
                 </Link>
@@ -255,7 +266,7 @@ export default function Navbar() {
       {mobileOpen ? (
         <div
           id="mobile-navigation"
-          className="border-b border-line bg-canvas shadow-lg md:hidden"
+          className="reveal border-b border-line bg-canvas shadow-lg md:hidden"
           onClick={closeAll}
         >
           <div className="container-page space-y-1 py-4">
@@ -267,7 +278,7 @@ export default function Navbar() {
                 className={cn(
                   "block rounded-lg px-3 py-2.5 text-sm font-medium",
                   isActive(link.href)
-                    ? "bg-surface-muted text-ocean-900"
+                    ? "bg-surface-muted text-brand-ink"
                     : "text-ink-muted hover:bg-surface-muted",
                 )}
               >
@@ -320,12 +331,17 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href="/register"
-                    className="rounded-full bg-ocean-900 px-4 py-2.5 text-center text-sm font-semibold text-white"
+                    className="rounded-full bg-brand px-4 py-2.5 text-center text-sm font-semibold text-on-brand"
                   >
                     Create account
                   </Link>
                 </div>
               )}
+
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-line px-1 pt-3">
+                <p className="text-xs font-medium text-ink-subtle">Colour theme</p>
+                <ThemeToggle />
+              </div>
             </div>
           </div>
         </div>

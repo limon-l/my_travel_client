@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/SessionProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "react-hot-toast";
 
 const manrope = Manrope({
@@ -52,26 +53,49 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0d2933",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f9f8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c151b" },
+  ],
 };
+
+/**
+ * Runs before first paint: applies the stored theme so a dark-mode visitor never
+ * sees a white flash. Kept tiny and dependency-free.
+ */
+const THEME_SCRIPT = `(function(){try{var m=localStorage.getItem("wa-theme")||"system";var d=m==="dark"||(m==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=d?"dark":"light";document.documentElement.classList.toggle("dark",d);document.documentElement.dataset.theme=r;document.documentElement.style.colorScheme=r;}catch(e){}})();`;
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className={`${manrope.variable} ${playfair.variable}`}>
-        <AuthProvider>
-          <a href="#main-content" className="skip-link">
-            Skip to main content
-          </a>
-          <div className="flex min-h-screen flex-col">
-            <Navbar />
-            <main id="main-content" className="flex-1 pt-16">
-              {children}
-            </main>
-            <Footer />
-          </div>
-          <Toaster position="bottom-right" />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <a href="#main-content" className="skip-link">
+              Skip to main content
+            </a>
+            <div className="flex min-h-screen flex-col">
+              <Navbar />
+              <main id="main-content" className="flex-1 pt-16">
+                {children}
+              </main>
+              <Footer />
+            </div>
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                style: {
+                  background: "var(--surface)",
+                  color: "var(--ink)",
+                  border: "1px solid var(--line)",
+                },
+              }}
+            />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

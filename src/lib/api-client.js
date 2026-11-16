@@ -62,7 +62,13 @@ async function request(path, { method = "GET", body, idempotencyKey, signal } = 
           ? "You do not have permission to do that."
           : response.status === 404
             ? "We could not find what you were looking for."
-            : "Something went wrong. Please try again.";
+            : response.status === 409
+              ? "That changed while you were working. Refresh and try again."
+              : response.status === 429
+                ? "Too many attempts. Please wait a moment and try again."
+                : response.status === 503
+                  ? "The travel service is briefly unavailable. Your details are safe — retry in a moment."
+                  : "Something went wrong. Please try again.";
     throw new ApiError(data?.error || fallback, {
       status: response.status,
       code: data?.code || `HTTP_${response.status}`,
@@ -109,6 +115,7 @@ export const api = {
         body: { status, note },
       }),
     createTour: (payload) => request("tours", { method: "POST", body: payload }),
+    updateTour: (tourId, payload) => request(`tours/${tourId}`, { method: "PATCH", body: payload }),
     deleteTour: (tourId) => request(`tours/${tourId}`, { method: "DELETE" }),
     setAvailableDates: (tourId, availableDates) =>
       request(`tours/${tourId}/available-dates`, {

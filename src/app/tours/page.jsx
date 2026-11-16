@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import { Compass } from "lucide-react";
 
 import TourCatalogue from "./TourCatalogue";
-import { Container } from "@/components/ui";
+import { Container, LoadingState } from "@/components/ui";
 import { loadTours } from "@/lib/catalogue";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default async function ToursPage() {
     <div className="pb-20 pt-10 sm:pt-12">
       <Container>
         <div className="mb-8 max-w-2xl">
-          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-lagoon-700">
+          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-brand-ink">
             <Compass size={14} aria-hidden="true" />
             The atlas
           </p>
@@ -33,7 +34,9 @@ export default async function ToursPage() {
           </p>
         </div>
 
-        <TourCatalogue tours={tours} error={error} />
+        <Suspense fallback={<LoadingState label="Loading the catalogue…" />}>
+          <TourCatalogue tours={tours} error={error} />
+        </Suspense>
       </Container>
     </div>
   );

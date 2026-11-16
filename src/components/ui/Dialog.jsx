@@ -89,7 +89,7 @@ export default function Dialog({
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-end justify-center p-0 sm:items-center sm:p-6">
       <div
-        className="absolute inset-0 bg-ocean-950/55 backdrop-blur-sm"
+        className="fade-in absolute inset-0 bg-overlay backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -101,7 +101,7 @@ export default function Dialog({
         aria-describedby={description ? "dialog-description" : undefined}
         tabIndex={-1}
         className={cn(
-          "relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl border border-line bg-surface shadow-2xl sm:rounded-2xl",
+          "reveal relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl border border-line bg-surface shadow-2xl sm:rounded-2xl",
           widths[size] || widths.md,
         )}
       >
@@ -129,7 +129,7 @@ export default function Dialog({
         <div className="overflow-y-auto px-5 py-5">{children}</div>
 
         {footer ? (
-          <div className="border-t border-line bg-sand-50 px-5 py-4">{footer}</div>
+          <div className="border-t border-line bg-surface-muted px-5 py-4">{footer}</div>
         ) : null}
       </div>
     </div>,

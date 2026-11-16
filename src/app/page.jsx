@@ -161,7 +161,7 @@ export default async function HomePage() {
               },
             ].map((item) => (
               <li key={item.title} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lagoon-50 text-lagoon-700">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-ink">
                   <ShieldCheck size={17} aria-hidden="true" />
                 </span>
                 <div>
@@ -229,10 +229,10 @@ export default async function HomePage() {
                 key={step.title}
                 className="relative rounded-2xl border border-line bg-surface p-6"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-ocean-900 text-white">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand text-on-brand">
                   <step.icon size={20} aria-hidden="true" />
                 </span>
-                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-lagoon-700">
+                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-brand-ink">
                   Step {index + 1}
                 </p>
                 <h3 className="mt-2 text-lg text-ink">{step.title}</h3>

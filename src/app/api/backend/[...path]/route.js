@@ -79,6 +79,12 @@ const ROUTES = [
     fields: STATUS_FIELDS,
   },
   { method: "POST", pattern: /^tours$/, access: "admin", fields: TOUR_FIELDS },
+  {
+    method: "PATCH",
+    pattern: new RegExp(`^tours/${TOUR_ID}$`),
+    access: "admin",
+    fields: TOUR_FIELDS,
+  },
   { method: "DELETE", pattern: new RegExp(`^tours/${TOUR_ID}$`), access: "admin" },
   {
     method: "PUT",
@@ -234,4 +240,5 @@ async function proxy(request, context) {
 export const GET = proxy;
 export const POST = proxy;
 export const PUT = proxy;
+export const PATCH = proxy;
 export const DELETE = proxy;

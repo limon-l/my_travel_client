@@ -32,7 +32,7 @@ export function SectionHeading({
       )}
     >
       {eyebrow ? (
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-lagoon-700">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-brand-ink">
           {eyebrow}
         </p>
       ) : null}
@@ -48,15 +48,15 @@ export function SectionHeading({
 
 const BUTTON_VARIANTS = {
   primary:
-    "bg-ocean-900 text-white hover:bg-ocean-800 active:bg-ocean-950 shadow-sm",
+    "bg-brand text-on-brand hover:bg-brand-hover active:bg-brand-hover shadow-sm",
   accent:
-    "bg-lagoon-600 text-white hover:bg-lagoon-700 active:bg-lagoon-700 shadow-sm",
+    "bg-sunset-500 text-ocean-950 hover:bg-sunset-600 active:bg-sunset-700 shadow-sm",
   secondary:
-    "bg-surface text-ink border border-line-strong hover:bg-surface-muted active:bg-sand-200",
+    "bg-surface text-ink border border-line-strong hover:bg-surface-muted active:bg-surface-muted",
   ghost: "bg-transparent text-ink-muted hover:bg-surface-muted hover:text-ink",
   danger: "bg-danger text-white hover:brightness-110 active:brightness-95",
   quiet:
-    "bg-lagoon-50 text-lagoon-700 border border-lagoon-100 hover:bg-lagoon-100",
+    "bg-brand-soft text-brand-ink border border-brand-line hover:brightness-105",
 };
 
 const BUTTON_SIZES = {
@@ -86,7 +86,7 @@ export function ButtonLink({ href, variant, size, className, children, ...props 
 
 const BADGE_TONES = {
   neutral: "bg-surface-muted text-ink-muted border-line",
-  lagoon: "bg-lagoon-50 text-lagoon-700 border-lagoon-100",
+  lagoon: "bg-brand-soft text-brand-ink border-brand-line",
   success: "bg-success-soft text-success border-success-line",
   warning: "bg-warning-soft text-warning border-warning-line",
   danger: "bg-danger-soft text-danger border-danger-line",
@@ -162,14 +162,14 @@ export function Spinner({ className, label = "Loading" }) {
 export function LoadingState({ label = "Loading", className }) {
   return (
     <div className={cn("flex flex-col items-center justify-center gap-3 py-20 text-ink-muted", className)}>
-      <Spinner className="h-8 w-8 text-lagoon-600" />
+      <Spinner className="h-8 w-8 text-brand" />
       <p className="text-sm font-medium">{label}</p>
     </div>
   );
 }
 
 export function Skeleton({ className }) {
-  return <div aria-hidden="true" className={cn("animate-pulse rounded-lg bg-sand-200/70", className)} />;
+  return <div aria-hidden="true" className={cn("skeleton rounded-lg", className)} />;
 }
 
 export function Field({ label, htmlFor, hint, error, required, children, className }) {
@@ -202,7 +202,7 @@ export function inputClasses({ invalid = false } = {}) {
   return cn(
     "w-full rounded-xl border bg-surface px-3.5 py-2.5 text-sm text-ink shadow-sm transition-colors",
     "placeholder:text-ink-subtle",
-    invalid ? "border-danger-line" : "border-line-strong hover:border-sand-400",
+    invalid ? "border-danger-line" : "border-line-strong hover:border-ink-subtle",
   );
 }
 
@@ -212,7 +212,7 @@ export function StatTile({ label, value, hint, tone = "neutral" }) {
     warning: "text-warning",
     success: "text-success",
     danger: "text-danger",
-    lagoon: "text-lagoon-700",
+    lagoon: "text-brand-ink",
   };
   return (
     <div className="rounded-2xl border border-line bg-surface p-5">

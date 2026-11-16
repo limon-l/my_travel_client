@@ -7,11 +7,20 @@ import { useSession } from "next-auth/react";
 import { CalendarDays, CheckCircle2, Loader2, Lock, ShieldCheck } from "lucide-react";
 
 import DeparturePicker from "@/components/DeparturePicker";
+import MonthCalendar from "@/components/MonthCalendar";
 import StatusBadge from "@/components/StatusBadge";
 import Dialog from "@/components/ui/Dialog";
 import { Alert, Button, ButtonLink } from "@/components/ui";
 import { ApiError, api, bookingRequestId } from "@/lib/api-client";
-import { addDaysDateOnly, formatCurrency, formatDeparture, isUpcoming, nightsBetween } from "@/lib/dates";
+import {
+  addDaysDateOnly,
+  formatCurrency,
+  formatDeparture,
+  isUpcoming,
+  monthKeyOf,
+  nightsBetween,
+  todayMonthKey,
+} from "@/lib/dates";
 import { isAdminSession } from "@/lib/roles";
 import { statusMeta } from "@/lib/booking-status";
 
@@ -30,6 +39,8 @@ export default function BookingPanel({ tour, initialAvailableDates = [], existin
   const [datesError, setDatesError] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
   const [datesReloadKey, setDatesReloadKey] = useState(0);
+  const [view, setView] = useState("calendar");
+  const [month, setMonth] = useState(todayMonthKey());
   const [reviewOpen, setReviewOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -48,6 +59,14 @@ export default function BookingPanel({ tour, initialAvailableDates = [], existin
         const list = Array.isArray(data?.availableDates) ? data.availableDates : [];
         setAvailableDates(list);
         setSelectedDate((current) => (list.includes(current) ? current : ""));
+        // If the visible month has no departures, move to the first month that does.
+        const upcomingList = list.filter((date) => isUpcoming(date)).sort();
+        if (upcomingList.length > 0) {
+          setMonth((current) => {
+            const hasInMonth = upcomingList.some((date) => monthKeyOf(date) === current);
+            return hasInMonth ? current : monthKeyOf(upcomingList[0]);
+          });
+        }
         setDatesError(null);
       } catch (error) {
         if (!active) return;
@@ -123,8 +142,8 @@ export default function BookingPanel({ tour, initialAvailableDates = [], existin
 
   if (isAdmin) {
     return (
-      <div className="rounded-2xl border border-lagoon-100 bg-lagoon-50 p-5">
-        <p className="text-sm font-semibold text-lagoon-700">Operations view</p>
+      <div className="rounded-2xl border border-brand-line bg-brand-soft p-5">
+        <p className="text-sm font-semibold text-brand-ink">Operations view</p>
         <p className="mt-1 text-sm text-ink-muted">
           Admins schedule departures rather than requesting them.
         </p>
@@ -234,23 +253,80 @@ export default function BookingPanel({ tour, initialAvailableDates = [], existin
     <div className="rounded-2xl border border-line bg-surface p-5">
       <div className="flex items-center justify-between gap-3">
         <p className="font-display text-lg text-ink">Request this journey</p>
-        <span className="text-sm font-semibold text-ocean-900">
+        <span className="text-sm font-semibold text-brand-ink">
           {formatCurrency(tour.price)}
         </span>
       </div>
 
       <div className="mt-4">
-        <DeparturePicker
-          departures={upcoming}
-          selected={selectedDate}
-          onSelect={setSelectedDate}
-          durationDays={tour.duration}
-          loading={loadingDates}
-          error={datesError}
-          onRetry={refreshDates}
-          price={tour.price}
-        />
+        {!loadingDates && !datesError && upcoming.length > 0 ? (
+          <div className="mb-3 inline-flex rounded-full border border-line bg-surface-muted p-0.5 text-xs font-semibold">
+            {[
+              { value: "calendar", label: "Calendar" },
+              { value: "list", label: "List" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={view === option.value}
+                onClick={() => setView(option.value)}
+                className={
+                  view === option.value
+                    ? "rounded-full bg-surface px-3 py-1 text-ink shadow-sm"
+                    : "rounded-full px-3 py-1 text-ink-muted hover:text-ink"
+                }
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {loadingDates || datesError || upcoming.length === 0 ? (
+          <DeparturePicker
+            departures={upcoming}
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            durationDays={tour.duration}
+            loading={loadingDates}
+            error={datesError}
+            onRetry={refreshDates}
+            price={tour.price}
+          />
+        ) : view === "calendar" ? (
+          <MonthCalendar
+            month={month}
+            onMonthChange={setMonth}
+            availableDates={upcoming}
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            idPrefix={`departure-${tour._id}`}
+          />
+        ) : (
+          <DeparturePicker
+            departures={upcoming}
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            durationDays={tour.duration}
+            loading={loadingDates}
+            error={datesError}
+            onRetry={refreshDates}
+            price={tour.price}
+          />
+        )}
       </div>
+
+      {selectedDate ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-line bg-brand-soft px-3 py-2 text-xs text-brand-ink">
+          <span className="font-semibold">
+            {formatDeparture(selectedDate, { withWeekday: true })}
+          </span>
+          <span>
+            {nights ? `${nights} nights` : "Duration set by operations"}
+            {returnDate ? ` · returns ${formatDeparture(returnDate)}` : ""}
+          </span>
+        </div>
+      ) : null}
 
       {submitError ? (
         <Alert tone="danger" role="alert" className="mt-4">
@@ -317,7 +393,7 @@ export default function BookingPanel({ tour, initialAvailableDates = [], existin
           </div>
           <div className="flex items-start justify-between gap-4 border-t border-line pt-3">
             <dt className="text-ink-muted">Listed price</dt>
-            <dd className="text-right font-semibold text-ocean-900">{formatCurrency(tour.price)}</dd>
+            <dd className="text-right font-semibold text-brand-ink">{formatCurrency(tour.price)}</dd>
           </div>
         </dl>
 

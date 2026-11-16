@@ -35,7 +35,7 @@ export default function DashboardNav({ role }) {
                 className={cn(
                   "inline-flex whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-ocean-900 text-white"
+                    ? "bg-brand text-on-brand"
                     : "text-ink-muted hover:bg-surface-muted hover:text-ink",
                 )}
               >

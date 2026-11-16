@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CalendarDays, ClipboardList, PlusCircle, Route } from "lucide-react";
 
+import { RecentActivity, RequestsTrend, StatusDistribution, TopTours } from "./AdminInsights";
 import { Alert, SectionHeading, StatTile } from "@/components/ui";
 import { backendFetch } from "@/lib/backend";
 import { identityFromSession } from "@/lib/identity";
@@ -27,13 +28,17 @@ export default async function DashboardOverviewPage() {
     error = cause?.message || "The operations summary could not be loaded.";
   }
 
+  const days = Array.isArray(summary?.requestsByDay) ? summary.requestsByDay : [];
+  const topTours = Array.isArray(summary?.topTours) ? summary.topTours : [];
+  const recent = Array.isArray(summary?.recentBookings) ? summary.recentBookings : [];
+
   return (
     <div>
       <div className="max-w-2xl">
         <h1 className="text-3xl text-ink sm:text-4xl">Operations overview</h1>
         <p className="mt-3 text-base leading-relaxed text-ink-muted">
-          Counts below come straight from the booking and tour collections. Nothing is
-          estimated or rounded up for presentation.
+          Counts and charts below come straight from the booking and tour collections.
+          Nothing is estimated, and request volume is never described as revenue.
         </p>
       </div>
 
@@ -42,42 +47,55 @@ export default async function DashboardOverviewPage() {
           {error}
         </Alert>
       ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatTile
-            label="Pending requests"
-            value={summary?.pending ?? 0}
-            hint="Awaiting an operations decision"
-            tone="warning"
-          />
-          <StatTile
-            label="Confirmed"
-            value={summary?.confirmed ?? 0}
-            hint="Approved departures"
-            tone="success"
-          />
-          <StatTile
-            label="Rejected"
-            value={summary?.rejected ?? 0}
-            hint="Declined requests"
-            tone="danger"
-          />
-          <StatTile
-            label="Journeys"
-            value={summary?.tours ?? 0}
-            hint="In the catalogue"
-            tone="lagoon"
-          />
-          <StatTile
-            label="Active departures"
-            value={summary?.activeDepartures ?? 0}
-            hint="Published today or later"
-          />
-          <StatTile
-            label="Upcoming confirmed"
-            value={summary?.upcomingConfirmed ?? 0}
-            hint="Confirmed with a future date"
-          />
-        </div>
+        <>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <StatTile
+              label="Pending requests"
+              value={summary?.pending ?? 0}
+              hint="Awaiting an operations decision"
+              tone="warning"
+            />
+            <StatTile
+              label="Confirmed"
+              value={summary?.confirmed ?? 0}
+              hint="Approved departures"
+              tone="success"
+            />
+            <StatTile
+              label="Rejected"
+              value={summary?.rejected ?? 0}
+              hint="Declined requests"
+              tone="danger"
+            />
+            <StatTile
+              label="Total requests"
+              value={summary?.totalRequests ?? 0}
+              hint="All statuses, lifetime"
+            />
+            <StatTile
+              label="Journeys"
+              value={summary?.tours ?? 0}
+              hint="In the catalogue"
+              tone="lagoon"
+            />
+            <StatTile
+              label="Active departures"
+              value={summary?.activeDepartures ?? 0}
+              hint="Published today or later"
+            />
+          </div>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-2">
+            <RequestsTrend days={days} />
+            <StatusDistribution
+              pending={summary?.pending ?? 0}
+              confirmed={summary?.confirmed ?? 0}
+              rejected={summary?.rejected ?? 0}
+            />
+            <TopTours tours={topTours} />
+            <RecentActivity bookings={recent} />
+          </div>
+        </>
       )}
 
       <div className="mt-12">
@@ -98,7 +116,7 @@ export default async function DashboardOverviewPage() {
               href: "/dashboard/manage",
               icon: Route,
               title: "Manage journeys",
-              body: "See every journey, its published departures, and remove an unused one.",
+              body: "See every journey, edit its fields, its published departures, or remove an unused one.",
             },
             {
               href: "/dashboard/add",
@@ -110,9 +128,9 @@ export default async function DashboardOverviewPage() {
             <Link
               key={card.href}
               href={card.href}
-              className="group rounded-2xl border border-line bg-surface p-6 transition-shadow hover:shadow-[0_20px_45px_-32px_rgba(13,41,51,0.5)]"
+              className="lift group rounded-2xl border border-line bg-surface p-6 hover:shadow-card"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-lagoon-50 text-lagoon-700">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-soft text-brand-ink">
                 <card.icon size={20} aria-hidden="true" />
               </span>
               <p className="mt-4 flex items-center gap-1.5 text-lg font-semibold text-ink">

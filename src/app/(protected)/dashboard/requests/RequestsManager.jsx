@@ -6,11 +6,14 @@ import {
   CalendarDays,
   CalendarPlus,
   CheckCircle2,
+  Eye,
   Loader2,
+  Search,
   XCircle,
 } from "lucide-react";
 
 import StatusBadge from "@/components/StatusBadge";
+import MonthCalendar from "@/components/MonthCalendar";
 import Dialog from "@/components/ui/Dialog";
 import {
   Alert,
@@ -22,17 +25,37 @@ import {
 } from "@/components/ui";
 import { ApiError, api } from "@/lib/api-client";
 import {
+  formatCurrency,
   formatDeparture,
   formatTimestamp,
   isUpcoming,
+  monthKeyOf,
   todayDateOnly,
+  todayMonthKey,
 } from "@/lib/dates";
 import { cn } from "@/lib/cn";
 
 const FILTERS = ["Pending", "Confirmed", "Rejected", "All"];
 
+const SORTS = [
+  { value: "newest", label: "Newest first" },
+  { value: "departure", label: "Departure date" },
+  { value: "traveller", label: "Traveller name" },
+];
+
 function messageFor(error, fallback) {
   return error instanceof ApiError ? error.message : fallback;
+}
+
+function bookingRef(booking) {
+  return String(booking?._id || "").slice(-8).toUpperCase();
+}
+
+function monthForTour(tour) {
+  const upcoming = (Array.isArray(tour?.availableDates) ? tour.availableDates : [])
+    .filter((date) => isUpcoming(date))
+    .sort();
+  return upcoming.length > 0 ? monthKeyOf(upcoming[0]) : todayMonthKey();
 }
 
 export default function RequestsManager() {
@@ -41,14 +64,18 @@ export default function RequestsManager() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [filter, setFilter] = useState("Pending");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("newest");
   const [reloadKey, setReloadKey] = useState(0);
 
   const [selectedTourId, setSelectedTourId] = useState("");
+  const [monthByTour, setMonthByTour] = useState({});
   const [dateInput, setDateInput] = useState("");
   const [dateError, setDateError] = useState(null);
   const [savingDates, setSavingDates] = useState(false);
   const [dateNotice, setDateNotice] = useState(null);
 
+  const [detail, setDetail] = useState(null);
   const [action, setAction] = useState(null);
   const [note, setNote] = useState("");
   const [acting, setActing] = useState(false);
@@ -90,6 +117,14 @@ export default function RequestsManager() {
     [selectedTour],
   );
 
+  // Open the scheduler on the first month that actually has a departure. The
+  // month is tracked per journey, so switching journeys never loses your place
+  // and no state has to be written from an effect.
+  const month = monthByTour[selectedTourId] || monthForTour(selectedTour);
+  function setMonth(next) {
+    setMonthByTour((current) => ({ ...current, [selectedTourId]: next }));
+  }
+
   const counts = useMemo(
     () =>
       bookings.reduce(
@@ -102,7 +137,34 @@ export default function RequestsManager() {
     [bookings],
   );
 
-  const filtered = filter === "All" ? bookings : bookings.filter((b) => b.status === filter);
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const base = filter === "All" ? bookings : bookings.filter((b) => b.status === filter);
+    const searched =
+      needle.length === 0
+        ? base
+        : base.filter((booking) =>
+            [booking.tourTitle, booking.userName, booking.userEmail, booking._id]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase()
+              .includes(needle),
+          );
+
+    const copy = [...searched];
+    if (sort === "departure") {
+      copy.sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)));
+    } else if (sort === "traveller") {
+      copy.sort((a, b) =>
+        String(a.userName || "").localeCompare(String(b.userName || ""), undefined, {
+          sensitivity: "base",
+        }),
+      );
+    } else {
+      copy.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+    return copy;
+  }, [bookings, filter, query, sort]);
 
   function closeAction() {
     if (acting) return;
@@ -112,6 +174,7 @@ export default function RequestsManager() {
   }
 
   function openDecision(booking, status) {
+    setDetail(null);
     setAction({ kind: "decision", booking, status });
     setNote("");
     setActionError(null);
@@ -128,7 +191,7 @@ export default function RequestsManager() {
   }
 
   async function persistDates(nextDates, successMessage) {
-    if (!selectedTour) return;
+    if (!selectedTour) return false;
     setSavingDates(true);
     setDateError(null);
     setDateNotice(null);
@@ -179,6 +242,17 @@ export default function RequestsManager() {
     if (ok) setDateInput("");
   }
 
+  // Calendar manage mode: an unpublished date is published immediately, a
+  // published date opens the confirmation dialog because it may affect bookings.
+  async function toggleCalendarDate(date) {
+    if (!selectedTour || savingDates) return;
+    if (selectedDates.includes(date)) {
+      openDisable(date);
+      return;
+    }
+    await persistDates([...selectedDates, date], "Departure published");
+  }
+
   async function confirmAction() {
     if (!action) return;
     setActing(true);
@@ -218,6 +292,17 @@ export default function RequestsManager() {
       setNote("");
     } catch (error) {
       setActionError(messageFor(error, "That action could not be completed."));
+      // Another administrator may have decided this request while the dialog was
+      // open. Reload the authoritative queue instead of leaving stale actions.
+      if (error instanceof ApiError && error.status === 409) {
+        try {
+          const fresh = await api.admin.listBookings();
+          setBookings(Array.isArray(fresh) ? fresh : []);
+          setDetail(null);
+        } catch {
+          /* The original conflict message is still the useful one. */
+        }
+      }
     } finally {
       setActing(false);
     }
@@ -256,7 +341,7 @@ export default function RequestsManager() {
       <section aria-labelledby="departure-schedule" className="mt-10">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="departure-schedule" className="flex items-center gap-2 text-2xl text-ink">
-            <CalendarDays size={20} aria-hidden="true" className="text-lagoon-700" />
+            <CalendarDays size={20} aria-hidden="true" className="text-brand-ink" />
             Departure schedule
           </h2>
           <button
@@ -334,43 +419,63 @@ export default function RequestsManager() {
             </Alert>
           ) : null}
 
-          <div className="mt-5">
-            <h3 className="text-sm font-semibold text-ink">Published departures</h3>
-            {selectedDates.length === 0 ? (
-              <p className="mt-2 text-sm text-ink-muted">
-                None yet. Travellers cannot request this journey until a future date is
-                published.
+          <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,22rem)_1fr]">
+            <div>
+              <p className="mb-2 text-sm font-semibold text-ink">Calendar</p>
+              <MonthCalendar
+                month={month}
+                onMonthChange={setMonth}
+                availableDates={selectedDates}
+                selected={null}
+                onSelect={toggleCalendarDate}
+                mode="manage"
+                disabled={!selectedTour || savingDates}
+                idPrefix="schedule"
+              />
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-subtle">
+                Select a future day to publish it. Select a published day to review disabling
+                it.
               </p>
-            ) : (
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {selectedDates.map((date) => {
-                  const past = !isUpcoming(date);
-                  return (
-                    <li
-                      key={date}
-                      className={cn(
-                        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold",
-                        past
-                          ? "border-line bg-surface-muted text-ink-subtle"
-                          : "border-lagoon-100 bg-lagoon-50 text-lagoon-700",
-                      )}
-                    >
-                      {formatDeparture(date, { withWeekday: true })}
-                      {past ? <span className="font-normal">(past)</span> : null}
-                      <button
-                        type="button"
-                        onClick={() => openDisable(date)}
-                        disabled={savingDates}
-                        aria-label={`Disable departure ${formatDeparture(date)}`}
-                        className="rounded-full p-0.5 text-danger hover:bg-danger-soft disabled:opacity-50"
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-ink">Published departures</h3>
+              {selectedDates.length === 0 ? (
+                <p className="mt-2 text-sm text-ink-muted">
+                  None yet. Travellers cannot request this journey until a future date is
+                  published.
+                </p>
+              ) : (
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {selectedDates.map((date) => {
+                    const past = !isUpcoming(date);
+                    return (
+                      <li
+                        key={date}
+                        className={cn(
+                          "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold",
+                          past
+                            ? "border-line bg-surface-muted text-ink-subtle"
+                            : "border-brand-line bg-brand-soft text-brand-ink",
+                        )}
                       >
-                        <Ban size={12} aria-hidden="true" />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+                        {formatDeparture(date, { withWeekday: true })}
+                        {past ? <span className="font-normal">(past)</span> : null}
+                        <button
+                          type="button"
+                          onClick={() => openDisable(date)}
+                          disabled={savingDates}
+                          aria-label={`Disable departure ${formatDeparture(date)}`}
+                          className="rounded-full p-0.5 text-danger hover:bg-danger-soft disabled:opacity-50"
+                        >
+                          <Ban size={12} aria-hidden="true" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -398,7 +503,7 @@ export default function RequestsManager() {
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                   filter === item
-                    ? "border-ocean-900 bg-ocean-900 text-white"
+                    ? "border-brand bg-brand text-on-brand"
                     : "border-line-strong bg-surface text-ink-muted hover:bg-surface-muted",
                 )}
               >
@@ -411,6 +516,41 @@ export default function RequestsManager() {
           </div>
         </div>
 
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <Field label="Search requests" htmlFor="request-search" className="w-full sm:max-w-sm">
+            <div className="relative">
+              <Search
+                size={15}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-subtle"
+              />
+              <input
+                id="request-search"
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Journey, traveller or reference"
+                className={cn(inputClasses(), "pl-9")}
+              />
+            </div>
+          </Field>
+
+          <Field label="Sort by" htmlFor="request-sort" className="w-full sm:w-52">
+            <select
+              id="request-sort"
+              value={sort}
+              onChange={(event) => setSort(event.target.value)}
+              className={inputClasses()}
+            >
+              {SORTS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+
         <div className="mt-5">
           {filtered.length === 0 ? (
             <EmptyState
@@ -418,12 +558,16 @@ export default function RequestsManager() {
               title={
                 bookings.length === 0
                   ? "No booking requests yet"
-                  : `No ${filter === "All" ? "" : filter.toLowerCase()} requests`
+                  : query.trim().length > 0
+                    ? "No requests match this search"
+                    : `No ${filter === "All" ? "" : filter.toLowerCase()} requests`
               }
               description={
                 bookings.length === 0
                   ? "Requests appear here as soon as a traveller submits a published departure."
-                  : "Change the filter to see the other decisions."
+                  : query.trim().length > 0
+                    ? "Clear the search or change the status filter to see other requests."
+                    : "Change the filter to see the other decisions."
               }
             />
           ) : (
@@ -459,7 +603,7 @@ export default function RequestsManager() {
                             {booking.tourTitle || "Journey"}
                           </p>
                           <p className="mt-0.5 text-[11px] uppercase tracking-wide text-ink-subtle">
-                            Ref {String(booking._id).slice(-8).toUpperCase()}
+                            Ref {bookingRef(booking)}
                           </p>
                         </td>
                         <td className="px-4 py-3 text-sm text-ink-muted">
@@ -481,28 +625,39 @@ export default function RequestsManager() {
                           ) : null}
                         </td>
                         <td className="px-4 py-3">
-                          {booking.status === "Pending" ? (
-                            <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
-                              <Button
-                                size="sm"
-                                variant="accent"
-                                onClick={() => openDecision(booking, "Confirmed")}
-                              >
-                                <CheckCircle2 size={14} aria-hidden="true" />
-                                Confirm
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => openDecision(booking, "Rejected")}
-                              >
-                                <XCircle size={14} aria-hidden="true" />
-                                Reject
-                              </Button>
-                            </div>
-                          ) : (
-                            <p className="text-right text-xs text-ink-subtle">Decision final</p>
-                          )}
+                          <div className="flex flex-col items-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setDetail(booking)}
+                              aria-label={`View request ${bookingRef(booking)}`}
+                            >
+                              <Eye size={14} aria-hidden="true" />
+                              View
+                            </Button>
+                            {booking.status === "Pending" ? (
+                              <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="accent"
+                                  onClick={() => openDecision(booking, "Confirmed")}
+                                >
+                                  <CheckCircle2 size={14} aria-hidden="true" />
+                                  Confirm
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => openDecision(booking, "Rejected")}
+                                >
+                                  <XCircle size={14} aria-hidden="true" />
+                                  Reject
+                                </Button>
+                              </div>
+                            ) : (
+                              <p className="text-right text-xs text-ink-subtle">Decision final</p>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -513,6 +668,102 @@ export default function RequestsManager() {
           )}
         </div>
       </section>
+
+      <Dialog
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail ? `Request ${bookingRef(detail)}` : "Request"}
+        description="The stored booking record, as operations sees it."
+        footer={
+          detail?.status === "Pending" ? (
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={() => setDetail(null)}>
+                Close
+              </Button>
+              <Button variant="secondary" onClick={() => openDecision(detail, "Rejected")}>
+                <XCircle size={14} aria-hidden="true" />
+                Reject
+              </Button>
+              <Button variant="accent" onClick={() => openDecision(detail, "Confirmed")}>
+                <CheckCircle2 size={14} aria-hidden="true" />
+                Confirm
+              </Button>
+            </div>
+          ) : (
+            <div className="flex justify-end">
+              <Button variant="secondary" onClick={() => setDetail(null)}>
+                Close
+              </Button>
+            </div>
+          )
+        }
+      >
+        {detail ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-base font-semibold text-ink">{detail.tourTitle || "Journey"}</p>
+              <StatusBadge status={detail.status} />
+            </div>
+            <dl className="grid gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+                  Traveller
+                </dt>
+                <dd className="mt-1 text-ink">{detail.userName || "Traveller"}</dd>
+                <dd className="text-xs text-ink-muted">{detail.userEmail || "No email stored"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+                  Departure
+                </dt>
+                <dd className="mt-1 text-ink">
+                  {formatDeparture(detail.startDate, { withWeekday: true })}
+                </dd>
+                {detail.endDate ? (
+                  <dd className="text-xs text-ink-muted">
+                    Ends {formatDeparture(detail.endDate)}
+                  </dd>
+                ) : null}
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+                  Requested price
+                </dt>
+                <dd className="mt-1 text-ink">
+                  {typeof detail.totalPrice === "number"
+                    ? formatCurrency(detail.totalPrice)
+                    : "Not stored"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+                  Submitted
+                </dt>
+                <dd className="mt-1 text-ink">{formatTimestamp(detail.createdAt) || "—"}</dd>
+                {detail.statusUpdatedAt ? (
+                  <dd className="text-xs text-ink-muted">
+                    Decision {formatTimestamp(detail.statusUpdatedAt)}
+                  </dd>
+                ) : null}
+              </div>
+            </dl>
+            {detail.statusNote ? (
+              <div className="rounded-xl border border-line bg-surface-muted p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+                  Operations note
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-ink">{detail.statusNote}</p>
+              </div>
+            ) : null}
+            {detail.status === "Pending" ? (
+              <Alert tone="info">
+                This is a request, not a confirmed reservation. Your decision is final once
+                saved.
+              </Alert>
+            ) : null}
+          </div>
+        ) : null}
+      </Dialog>
 
       <Dialog
         open={Boolean(action)}

@@ -19,7 +19,7 @@ export default function Footer() {
       <div className="container-page grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-2">
           <Link href="/" className="inline-flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-lagoon-600 text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-on-brand">
               <Compass size={18} aria-hidden="true" />
             </span>
             <span className="font-display text-xl text-white">Wanderlust Atlas</span>
@@ -70,9 +70,9 @@ export default function Footer() {
           <ul className="mt-4 space-y-2 text-sm text-sand-300">
             <li className="flex items-center gap-2">
               <Mail size={14} aria-hidden="true" />
-              <a href="mailto:hello@wanderlust.example" className="underline-offset-4 hover:text-white hover:underline">
-                hello@wanderlust.example
-              </a>
+              <Link href="/contact" className="underline-offset-4 hover:text-white hover:underline">
+                Contact the project
+              </Link>
             </li>
             <li className="flex items-center gap-2">
               <MapPin size={14} aria-hidden="true" />

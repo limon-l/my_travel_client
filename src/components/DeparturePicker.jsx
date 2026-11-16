@@ -23,7 +23,7 @@ export default function DeparturePicker({
   if (loading) {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-line bg-surface-muted px-4 py-6 text-sm text-ink-muted">
-        <Spinner className="text-lagoon-600" />
+        <Spinner className="text-brand" />
         Checking the latest departures…
       </div>
     );
@@ -74,8 +74,8 @@ export default function DeparturePicker({
               className={cn(
                 "flex cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 transition-colors",
                 isSelected
-                  ? "border-lagoon-600 bg-lagoon-50"
-                  : "border-line-strong bg-surface hover:border-sand-400 hover:bg-sand-50",
+                  ? "border-brand bg-brand-soft"
+                  : "border-line-strong bg-surface hover:border-ink-subtle hover:bg-surface-muted",
               )}
             >
               <span className="flex min-w-0 items-center gap-3">
@@ -86,7 +86,7 @@ export default function DeparturePicker({
                   value={date}
                   checked={isSelected}
                   onChange={() => onSelect(date)}
-                  className="h-4 w-4 shrink-0 accent-lagoon-600"
+                  className="h-4 w-4 shrink-0 accent-brand"
                 />
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-ink">
@@ -99,7 +99,7 @@ export default function DeparturePicker({
                 </span>
               </span>
               {Number.isFinite(Number(price)) ? (
-                <span className="shrink-0 text-sm font-semibold text-ocean-900">
+                <span className="shrink-0 text-sm font-semibold text-brand-ink">
                   {formatCurrency(price)}
                 </span>
               ) : null}

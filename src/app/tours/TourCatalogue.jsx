@@ -1,79 +1,171 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal } from "lucide-react";
 
 import TourCard from "@/components/TourCard";
-import { Alert, EmptyState, Button } from "@/components/ui";
+import { Alert, EmptyState, Button, inputClasses } from "@/components/ui";
 import { cn } from "@/lib/cn";
-
-const CATEGORIES = ["All", "Standard", "Premium", "VIP"];
+import {
+  CATEGORIES,
+  DURATION_BANDS,
+  PRICE_BANDS,
+  SORT_OPTIONS,
+  filterTours,
+  filtersFromSearchParams,
+  filtersToSearchParams,
+  hasActiveFilters,
+} from "@/lib/catalogue-filter";
 
 export default function TourCatalogue({ tours, error }) {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const searchId = useId();
+  const priceId = useId();
+  const durationId = useId();
+  const sortId = useId();
 
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return tours.filter((tour) => {
-      const title = String(tour.title || "").toLowerCase();
-      const location = String(tour.location || "").toLowerCase();
-      const matchesQuery =
-        needle.length === 0 || title.includes(needle) || location.includes(needle);
-      const matchesCategory = category === "All" || tour.priority === category;
-      return matchesQuery && matchesCategory;
-    });
-  }, [tours, query, category]);
+  // The URL is the source of truth for shareable filter state. When the URL
+  // changes from outside this component (back/forward, a shared link), adjust
+  // state during render rather than in an effect.
+  const urlFilters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams]);
+  const urlSerialized = filtersToSearchParams(urlFilters).toString();
+  const [filters, setFilters] = useState(urlFilters);
+  const [seenUrl, setSeenUrl] = useState(urlSerialized);
 
-  const isFiltering = query.trim().length > 0 || category !== "All";
+  if (seenUrl !== urlSerialized) {
+    setSeenUrl(urlSerialized);
+    setFilters(urlFilters);
+  }
+
+  useEffect(() => {
+    const next = filtersToSearchParams(filters).toString();
+    const current = searchParams.toString();
+    if (next === current) return undefined;
+
+    const timer = setTimeout(() => {
+      router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [filters, pathname, router, searchParams]);
+
+  function update(field) {
+    return (event) => setFilters((current) => ({ ...current, [field]: event.target.value }));
+  }
+
+  function reset() {
+    setFilters({ query: "", category: "All", price: "any", duration: "any", sort: "recommended" });
+  }
+
+  const filtered = useMemo(() => filterTours(tours, filters), [tours, filters]);
+  const isFiltering = hasActiveFilters(filters);
 
   return (
     <div>
-      <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="w-full lg:max-w-md">
-          <label htmlFor={searchId} className="mb-1.5 block text-sm font-semibold text-ink">
-            Search journeys
-          </label>
-          <div className="relative">
-            <Search
-              size={17}
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-subtle"
-            />
-            <input
-              id={searchId}
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Destination or journey name"
-              className="w-full rounded-xl border border-line-strong bg-surface py-2.5 pl-10 pr-3.5 text-sm text-ink shadow-sm placeholder:text-ink-subtle hover:border-sand-400"
-            />
+      <div className="rounded-2xl border border-line bg-surface p-4 sm:p-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div>
+            <label htmlFor={searchId} className="mb-1.5 block text-sm font-semibold text-ink">
+              Search journeys
+            </label>
+            <div className="relative">
+              <Search
+                size={17}
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-subtle"
+              />
+              <input
+                id={searchId}
+                type="search"
+                value={filters.query}
+                onChange={update("query")}
+                placeholder="Destination, journey name or description"
+                className={cn(inputClasses(), "pl-10")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-ink">
+              <SlidersHorizontal size={15} aria-hidden="true" />
+              Category
+            </p>
+            <div role="group" aria-label="Filter by category" className="flex flex-wrap gap-2">
+              {CATEGORIES.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setFilters((current) => ({ ...current, category: item }))}
+                  aria-pressed={filters.category === item}
+                  className={cn(
+                    "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
+                    filters.category === item
+                      ? "border-brand bg-brand text-on-brand"
+                      : "border-line-strong bg-surface text-ink-muted hover:bg-surface-muted hover:text-ink",
+                  )}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div>
-          <p className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-ink">
-            <SlidersHorizontal size={15} aria-hidden="true" />
-            Category
-          </p>
-          <div role="group" aria-label="Filter by category" className="flex flex-wrap gap-2">
-            {CATEGORIES.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setCategory(item)}
-                aria-pressed={category === item}
-                className={cn(
-                  "rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
-                  category === item
-                    ? "border-ocean-900 bg-ocean-900 text-white"
-                    : "border-line-strong bg-surface text-ink-muted hover:bg-surface-muted hover:text-ink",
-                )}
-              >
-                {item}
-              </button>
-            ))}
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <label htmlFor={priceId} className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+              Price
+            </label>
+            <select
+              id={priceId}
+              value={filters.price}
+              onChange={update("price")}
+              className={inputClasses()}
+            >
+              {PRICE_BANDS.map((band) => (
+                <option key={band.value} value={band.value}>
+                  {band.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor={durationId} className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+              Duration
+            </label>
+            <select
+              id={durationId}
+              value={filters.duration}
+              onChange={update("duration")}
+              className={inputClasses()}
+            >
+              {DURATION_BANDS.map((band) => (
+                <option key={band.value} value={band.value}>
+                  {band.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor={sortId} className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-subtle">
+              Sort by
+            </label>
+            <select
+              id={sortId}
+              value={filters.sort}
+              onChange={update("sort")}
+              className={inputClasses()}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -85,14 +177,7 @@ export default function TourCatalogue({ tours, error }) {
             : `${filtered.length} of ${tours.length} journey${tours.length === 1 ? "" : "s"} shown`}
         </p>
         {isFiltering ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setQuery("");
-              setCategory("All");
-            }}
-          >
+          <Button variant="ghost" size="sm" onClick={reset}>
             Clear filters
           </Button>
         ) : null}
@@ -111,17 +196,11 @@ export default function TourCatalogue({ tours, error }) {
             description={
               tours.length === 0
                 ? "Operations has not added a journey to the catalogue yet."
-                : "Try a different destination or clear the category filter."
+                : "Try a different destination or relax the price and duration filters."
             }
             action={
               isFiltering ? (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setQuery("");
-                    setCategory("All");
-                  }}
-                >
+                <Button variant="secondary" onClick={reset}>
                   Clear filters
                 </Button>
               ) : null

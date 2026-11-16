@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Compass, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { Compass, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 
+import EditTourDialog from "./EditTourDialog";
 import Dialog from "@/components/ui/Dialog";
 import {
   Alert,
@@ -27,6 +28,7 @@ export default function TourInventory() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [editTarget, setEditTarget] = useState(null);
   const [notice, setNotice] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -198,7 +200,7 @@ export default function TourInventory() {
                       <tr key={tour._id}>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="relative hidden h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-line bg-sand-200 sm:block">
+                            <div className="relative hidden h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-line bg-surface-muted sm:block">
                               {tour.image ? (
                                 <Image
                                   src={tour.image}
@@ -241,18 +243,28 @@ export default function TourInventory() {
                           {departures}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setDeleteError(null);
-                              setDeleteTarget(tour);
-                            }}
-                            aria-label={`Delete ${tour.title}`}
-                            className="text-danger hover:bg-danger-soft"
-                          >
-                            <Trash2 size={16} aria-hidden="true" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditTarget(tour)}
+                              aria-label={`Edit ${tour.title}`}
+                            >
+                              <Pencil size={16} aria-hidden="true" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setDeleteError(null);
+                                setDeleteTarget(tour);
+                              }}
+                              aria-label={`Delete ${tour.title}`}
+                              className="text-danger hover:bg-danger-soft"
+                            >
+                              <Trash2 size={16} aria-hidden="true" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -304,6 +316,19 @@ export default function TourInventory() {
           </Alert>
         ) : null}
       </Dialog>
+
+      <EditTourDialog
+        key={editTarget?._id}
+        tour={editTarget}
+        open
+        onClose={() => setEditTarget(null)}
+        onSaved={(updated) => {
+          setTours((current) =>
+            current.map((tour) => (tour._id === updated._id ? { ...tour, ...updated } : tour)),
+          );
+          setNotice(`"${updated.title}" was updated. Existing booking snapshots were not changed.`);
+        }}
+      />
     </div>
   );
 }

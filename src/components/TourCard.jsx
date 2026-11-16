@@ -31,7 +31,7 @@ export default function TourCard({ tour, priority = false }) {
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-shadow hover:shadow-[0_24px_50px_-32px_rgba(13,41,51,0.55)]">
-      <div className="relative aspect-[4/3] overflow-hidden bg-sand-200">
+      <div className="relative aspect-[4/3] overflow-hidden bg-surface-muted">
         <TourImage src={tour.image} alt={tour.title} priority={priority} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ocean-950/55 via-transparent to-transparent" />
         <div className="absolute left-3 top-3 flex flex-wrap gap-2">
@@ -49,7 +49,7 @@ export default function TourCard({ tour, priority = false }) {
           <p className="font-display text-xl leading-tight drop-shadow">
             {tour.title}
           </p>
-          <p className="whitespace-nowrap rounded-full bg-white/95 px-3 py-1 text-sm font-bold text-ocean-900">
+          <p className="whitespace-nowrap rounded-full bg-white/95 px-3 py-1 text-sm font-bold text-brand-ink">
             {formatCurrency(tour.price)}
           </p>
         </div>
@@ -74,13 +74,13 @@ export default function TourCard({ tour, priority = false }) {
         <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
           <Link
             href={`/tours/${tour._id}`}
-            className="text-sm font-semibold text-lagoon-700 underline-offset-4 hover:underline"
+            className="text-sm font-semibold text-brand-ink underline-offset-4 hover:underline"
           >
             View itinerary
           </Link>
           <Link
             href={`/tours/${tour._id}#departures`}
-            className="inline-flex items-center gap-1 rounded-full bg-ocean-900 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-ocean-800"
+            className="inline-flex items-center gap-1 rounded-full bg-brand px-3.5 py-2 text-xs font-semibold text-on-brand transition-colors hover:bg-brand-hover"
           >
             {upcoming.length > 0 ? "Choose dates" : "View dates"}
             <ArrowUpRight size={14} aria-hidden="true" />

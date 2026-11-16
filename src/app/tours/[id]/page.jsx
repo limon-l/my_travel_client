@@ -13,11 +13,13 @@ import {
 
 import BookingPanel from "@/components/BookingPanel";
 import AvailabilityIndicator from "@/components/AvailabilityIndicator";
+import TourCard from "@/components/TourCard";
 import { Alert, Badge, ButtonLink, Container } from "@/components/ui";
 import {
   findActiveBooking,
   loadAvailability,
   loadTour,
+  loadTours,
 } from "@/lib/catalogue";
 import { formatCurrency, formatDeparture, isUpcoming } from "@/lib/dates";
 import { getIdentity, getSession } from "@/lib/server-auth";
@@ -48,11 +50,13 @@ export async function generateMetadata({ params }) {
 
 export default async function TourDetailPage({ params }) {
   const { id } = await params;
-  const [{ data: tour, error, notFound: missing }, availability, session] = await Promise.all([
-    loadTour(id),
-    loadAvailability(id),
-    getSession(),
-  ]);
+  const [{ data: tour, error, notFound: missing }, availability, session, catalogue] =
+    await Promise.all([
+      loadTour(id),
+      loadAvailability(id),
+      getSession(),
+      loadTours(),
+    ]);
 
   if (missing) notFound();
 
@@ -81,8 +85,16 @@ export default async function TourDetailPage({ params }) {
   const duration = Number(tour.duration) > 0 ? Number(tour.duration) : null;
   const fullDescription = plain(tour.fullDesc) || plain(tour.shortDesc);
 
+  const others = (Array.isArray(catalogue?.data) ? catalogue.data : []).filter(
+    (item) => item._id !== tour._id,
+  );
+  const related = [
+    ...others.filter((item) => item.priority === tour.priority),
+    ...others.filter((item) => item.priority !== tour.priority),
+  ].slice(0, 3);
+
   return (
-    <div className="pb-20 pt-8 sm:pt-10">
+    <div className="pb-28 pt-8 sm:pt-10 lg:pb-20">
       <Container>
         <Link
           href="/tours"
@@ -94,7 +106,7 @@ export default async function TourDetailPage({ params }) {
 
         <div className="mt-6 grid gap-10 lg:grid-cols-[1.35fr_0.85fr] lg:items-start">
           <div>
-            <div className="relative aspect-[16/10] overflow-hidden rounded-3xl border border-line bg-sand-200">
+            <div className="relative aspect-[16/10] overflow-hidden rounded-3xl border border-line bg-surface-muted">
               {tour.image ? (
                 <Image
                   src={tour.image}
@@ -131,7 +143,7 @@ export default async function TourDetailPage({ params }) {
                   Duration
                 </dt>
                 <dd className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-ink">
-                  <Clock size={14} aria-hidden="true" className="text-lagoon-700" />
+                  <Clock size={14} aria-hidden="true" className="text-brand-ink" />
                   {duration ? `${duration} days` : "Not set"}
                 </dd>
               </div>
@@ -139,7 +151,7 @@ export default async function TourDetailPage({ params }) {
                 <dt className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">
                   From
                 </dt>
-                <dd className="mt-1 text-sm font-semibold text-ocean-900">
+                <dd className="mt-1 text-sm font-semibold text-brand-ink">
                   {formatCurrency(tour.price)}
                 </dd>
               </div>
@@ -148,7 +160,7 @@ export default async function TourDetailPage({ params }) {
                   Published
                 </dt>
                 <dd className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-ink">
-                  <CalendarDays size={14} aria-hidden="true" className="text-lagoon-700" />
+                  <CalendarDays size={14} aria-hidden="true" className="text-brand-ink" />
                   {published.length} departure{published.length === 1 ? "" : "s"}
                 </dd>
               </div>
@@ -233,7 +245,7 @@ export default async function TourDetailPage({ params }) {
             </p>
           </div>
 
-          <aside className="lg:sticky lg:top-24">
+          <aside id="booking-panel" className="scroll-mt-24 lg:sticky lg:top-24">
             <BookingPanel
               tour={tour}
               initialAvailableDates={freeDates}
@@ -241,7 +253,7 @@ export default async function TourDetailPage({ params }) {
             />
             {session?.user ? null : (
               <p className="mt-3 text-center text-xs text-ink-subtle">
-                <Link href="/login" className="font-semibold text-lagoon-700 underline-offset-4 hover:underline">
+                <Link href="/login" className="font-semibold text-brand-ink underline-offset-4 hover:underline">
                   Sign in
                 </Link>{" "}
                 to request a departure.
@@ -249,7 +261,39 @@ export default async function TourDetailPage({ params }) {
             )}
           </aside>
         </div>
+
+        {related.length > 0 ? (
+          <section aria-labelledby="related-heading" className="mt-16">
+            <h2 id="related-heading" className="text-2xl text-ink">
+              Other journeys to consider
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-ink-muted">
+              Drawn from the same catalogue. Every card reflects its own stored price,
+              duration and published departures.
+            </p>
+            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((item) => (
+                <TourCard key={item._id} tour={item} />
+              ))}
+            </div>
+          </section>
+        ) : null}
       </Container>
+
+      {/* Mobile-only booking shortcut. Desktop keeps the sticky aside. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_30px_-24px_rgba(6,23,29,0.8)] backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
+              From
+            </p>
+            <p className="text-base font-semibold text-ink">{formatCurrency(tour.price)}</p>
+          </div>
+          <ButtonLink href="#booking-panel" variant="primary">
+            Choose a departure
+          </ButtonLink>
+        </div>
+      </div>
     </div>
   );
 }
