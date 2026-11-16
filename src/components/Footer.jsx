@@ -1,113 +1,91 @@
 import Link from "next/link";
-import { Instagram, Linkedin, Map, Facebook, X } from "lucide-react";
+import { Compass, Mail, MapPin } from "lucide-react";
+
+const exploreLinks = [
+  { label: "All destinations", href: "/tours" },
+  { label: "How booking works", href: "/about#booking-model" },
+  { label: "Contact the team", href: "/contact" },
+];
+
+const accountLinks = [
+  { label: "Sign in", href: "/login" },
+  { label: "Create account", href: "/register" },
+  { label: "My trips", href: "/dashboard/bookings" },
+];
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden bg-slate-950 text-slate-300 pt-16 pb-8 border-t border-slate-800">
-      <div className="absolute inset-0 opacity-30 pointer-events-none bg-[radial-gradient(circle_at_10%_20%,rgba(45,212,191,0.2),transparent_35%),radial-gradient(circle_at_90%_80%,rgba(56,189,248,0.16),transparent_32%)]"></div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="bg-linear-to-br from-teal-500 to-cyan-600 text-white p-1.5 rounded-lg shadow-lg shadow-teal-700/30 group-hover:scale-105 transition">
-                <Map size={20} />
-              </div>
-              <span className="text-xl font-bold text-white tracking-tight">
-                Wanderlust<span className="text-teal-500">.</span>
-              </span>
-            </Link>
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Crafting unforgettable journeys for the modern explorer. We
-              believe in sustainable, authentic travel experiences.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold mb-6">Company</h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link href="#" className="hover:text-teal-400 transition">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-teal-400 transition">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-teal-400 transition">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-teal-400 transition">
-                  Press
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold mb-6">Support</h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link href="#" className="hover:text-teal-400 transition">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-teal-400 transition">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-teal-400 transition">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="hover:text-teal-400 transition">
-                  FAQ
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-bold mb-6">Stay Connected</h4>
-            <div className="flex gap-4 mb-6">
-              <a
-                href="#"
-                className="bg-slate-800 p-2 rounded-lg hover:bg-teal-600 hover:text-white transition lift-hover">
-                <Facebook size={18} />
-              </a>
-              <a
-                href="#"
-                className="bg-slate-800 p-2 rounded-lg hover:bg-teal-600 hover:text-white transition lift-hover">
-                <X size={18} />
-              </a>
-              <a
-                href="#"
-                className="bg-slate-800 p-2 rounded-lg hover:bg-teal-600 hover:text-white transition lift-hover">
-                <Instagram size={18} />
-              </a>
-              <a
-                href="#"
-                className="bg-slate-800 p-2 rounded-lg hover:bg-teal-600 hover:text-white transition lift-hover">
-                <Linkedin size={18} />
-              </a>
-            </div>
-            <p className="text-xs text-slate-500">
-              © 2025 Wanderlust Agency.
-              <br />
-              All rights reserved.
-            </p>
-          </div>
+    <footer className="mt-24 border-t border-ocean-800 bg-ocean-950 text-sand-200">
+      <div className="container-page grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
+        <div className="lg:col-span-2">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-on-brand">
+              <Compass size={18} aria-hidden="true" />
+            </span>
+            <span className="font-display text-xl text-white">Wanderlust Atlas</span>
+          </Link>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-sand-300">
+            An availability-aware travel booking platform. Departures are
+            published by operations, requests are reviewed by people, and every
+            status you see reflects the stored booking record.
+          </p>
+          <p className="mt-4 max-w-md rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs leading-relaxed text-sand-300">
+            This is an independently built portfolio product. Tour photography is
+            sourced from third-party providers and pricing is illustrative.
+          </p>
         </div>
 
-        <div className="pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
-          Designed with Next.js & Tailwind CSS
+        <nav aria-label="Explore">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-sand-400">
+            Explore
+          </h2>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            {exploreLinks.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} className="text-sand-200 underline-offset-4 hover:text-white hover:underline">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-sand-400">
+            Account
+          </h2>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            {accountLinks.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} className="text-sand-200 underline-offset-4 hover:text-white hover:underline">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <h2 className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-sand-400">
+            Reach us
+          </h2>
+          <ul className="mt-4 space-y-2 text-sm text-sand-300">
+            <li className="flex items-center gap-2">
+              <Mail size={14} aria-hidden="true" />
+              <Link href="/contact" className="underline-offset-4 hover:text-white hover:underline">
+                Contact the project
+              </Link>
+            </li>
+            <li className="flex items-center gap-2">
+              <MapPin size={14} aria-hidden="true" />
+              Remote-first team
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="border-t border-white/10">
+        <div className="container-page flex flex-col gap-2 py-6 text-xs text-sand-400 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} Wanderlust Atlas. Portfolio project.</p>
+          <p>Next.js · React · NextAuth · Express · MongoDB</p>
         </div>
       </div>
     </footer>

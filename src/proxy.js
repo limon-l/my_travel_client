@@ -1,5 +1,9 @@
 import { withAuth } from "next-auth/middleware";
 
+/**
+ * Only the account area requires a session. The catalogue, tour pages, about
+ * and contact are public by design so travellers can browse before signing in.
+ */
 export default withAuth({
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
@@ -8,11 +12,5 @@ export default withAuth({
 });
 
 export const config = {
-  matcher: [
-    "/tours",
-    "/tours/:path*",
-    "/packages",
-    "/packages/:path*",
-    "/dashboard/:path*",
-  ],
+  matcher: ["/dashboard/:path*"],
 };
